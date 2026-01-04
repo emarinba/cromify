@@ -107,6 +107,22 @@ const App = {
         await this.handleRegister(e);
       });
     }
+
+    // Botones de Google
+    const btnLoginGoogle = document.getElementById('btnLoginGoogle');
+    const btnRegisterGoogle = document.getElementById('btnRegisterGoogle');
+
+    if (btnLoginGoogle) {
+      btnLoginGoogle.addEventListener('click', async () => {
+        await this.handleGoogleLogin();
+      });
+    }
+
+    if (btnRegisterGoogle) {
+      btnRegisterGoogle.addEventListener('click', async () => {
+        await this.handleGoogleLogin();
+      });
+    }
   },
 
   /**
@@ -183,6 +199,21 @@ const App = {
         Utils.showToast('Error al crear cuenta', 'error');
       }
     } finally {
+      Utils.hideLoader();
+    }
+  },
+
+  /**
+   * Manejar login con Google
+   */
+  async handleGoogleLogin() {
+    try {
+      Utils.showLoader();
+      await Auth.loginWithGoogle();
+      // La redirección es automática, el loader se mantendrá visible
+    } catch (error) {
+      console.error('Google login error:', error);
+      Utils.showToast('Error al iniciar sesión con Google', 'error');
       Utils.hideLoader();
     }
   },
