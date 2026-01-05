@@ -21,7 +21,7 @@ const Auth = {
         this.isLoadingProfile = true;
         
         try {
-          const user = await this.loadUserProfileWithTimeout(session.user.id, 5000);
+          const user = await this.loadUserProfileWithTimeout(session.user.id, 10000); // 10 segundos
           console.log('✅ Auth inicializado correctamente');
           return true;
         } catch (error) {
@@ -34,7 +34,7 @@ const Auth = {
             return true;
           } catch (createError) {
             console.error('❌ Error crítico creando usuario:', createError);
-            alert('Error crítico: No se pudo cargar tu perfil. Revisa la consola y ejecuta el SQL de diagnóstico.');
+            console.error('⚠️ EJECUTA EL SQL DE DIAGNÓSTICO EN SUPABASE');
             return false;
           }
         } finally {
@@ -54,13 +54,21 @@ const Auth = {
   /**
    * Cargar perfil con timeout
    */
-  async loadUserProfileWithTimeout(userId, timeoutMs = 5000) {
+  async loadUserProfileWithTimeout(userId, timeoutMs = 10000) {
     console.log(`🔵 Cargando perfil con timeout de ${timeoutMs}ms...`);
     
     return Promise.race([
       this.loadUserProfile(userId),
       new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Timeout cargando perfil')), timeoutMs)
+        setTimeout(() => {
+          console.error(`❌ TIMEOUT después de ${timeoutMs}ms`);
+          console.error('⚠️ La consulta está tardando demasiado');
+          console.error('💡 Posibles causas:');
+          console.error('   1. RLS bloqueando la consulta');
+          console.error('   2. Usuario no existe en la tabla users');
+          console.error('   3. Índice faltante en la BD');
+          reject(new Error(`Timeout cargando perfil después de ${timeoutMs}ms`));
+        }, timeoutMs)
       )
     ]);
   },
@@ -204,9 +212,9 @@ const Auth = {
 
       console.log('✅ Sesión iniciada:', data.user.id);
       
-      // Cargar perfil con timeout
+      // Cargar perfil con timeout de 10 segundos
       try {
-        await this.loadUserProfileWithTimeout(data.user.id, 5000);
+        await this.loadUserProfileWithTimeout(data.user.id, 10000);
       } catch (profileError) {
         console.error('❌ Error/timeout cargando perfil, creando usuario...');
         await this.ensureUserExists(data.user);
@@ -312,8 +320,8 @@ const Auth = {
             // Esperar un poco al trigger
             await new Promise(resolve => setTimeout(resolve, 500));
             
-            // Cargar con timeout
-            await this.loadUserProfileWithTimeout(session.user.id, 5000);
+            // Cargar con timeout de 10 segundos
+            await this.loadUserProfileWithTimeout(session.user.id, 10000);
             console.log('✅ Perfil cargado en SIGNED_IN');
           } catch (error) {
             console.error('❌ Error/timeout en SIGNED_IN, creando usuario...');
@@ -321,7 +329,7 @@ const Auth = {
               await this.ensureUserExists(session.user);
             } catch (createError) {
               console.error('❌ Error crítico en SIGNED_IN:', createError);
-              alert('Error: No se pudo cargar tu perfil. Ejecuta el SQL de diagnóstico.');
+              console.error('⚠️ EJECUTA EL SQL: DIAGNOSTICO-USUARIO.sql');
             }
           } finally {
             this.isLoadingProfile = false;
