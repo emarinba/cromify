@@ -238,17 +238,6 @@ const App = {
       Utils.hideLoader();
     }
   },
-      console.error('Register error:', error);
-      
-      if (error.message.includes('already registered')) {
-        Utils.showToast('Este email ya está registrado', 'error');
-      } else {
-        Utils.showToast('Error al crear cuenta', 'error');
-      }
-    } finally {
-      Utils.hideLoader();
-    }
-  },
 
   /**
    * Manejar login con Google
