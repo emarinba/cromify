@@ -3471,555 +3471,54 @@ body.dark-mode .btn-google:active {
         height: 18px;
     }
 }
-/* ========================================
-   CORRECCIONES DE DISEÑO Y UX
-   Agregar al final de styles.css
-   ======================================== */
+/* ==========================================================================
+   CORRECCIONES DEFINITIVAS - AGREGAR AL FINAL DEL CSS
+   ========================================================================== */
 
-/* ========================================
-   1. GRID DE CROMOS EN VISTA ÁLBUM
-   ======================================== */
-
+/* --------------------------------------------------------------------------
+   1. GRID DE CROMOS - MÁXIMO 6 COLUMNAS
+   -------------------------------------------------------------------------- */
 .cards-album-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 16px;
-  width: 100%;
-  padding: 20px;
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)) !important;
+  gap: 20px !important;
+  width: 100% !important;
+  padding: 20px !important;
 }
 
-/* Responsive para diferentes tamaños */
 @media (min-width: 768px) {
   .cards-album-grid {
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 20px;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)) !important;
   }
 }
 
 @media (min-width: 1024px) {
   .cards-album-grid {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-    gap: 20px;
+    grid-template-columns: repeat(6, 1fr) !important;
   }
 }
 
 @media (min-width: 1440px) {
   .cards-album-grid {
-    grid-template-columns: repeat(8, minmax(0, 1fr));
-    gap: 24px;
+    grid-template-columns: repeat(6, 1fr) !important;
   }
 }
 
-/* ========================================
-   2. STATS DE COLECCIÓN EN UNA LÍNEA
-   ======================================== */
-
-.collection-stats {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  padding: 16px;
-  background: var(--bg-secondary);
-  border-radius: 12px;
-  margin-bottom: 20px;
-}
-
-.stat-item {
-  flex: 1;
-  min-width: 120px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 12px 16px;
-  background: var(--bg-card);
-  border-radius: 8px;
-  box-shadow: var(--shadow-sm);
-  transition: all 0.2s;
-}
-
-.stat-item:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
-}
-
-.stat-label {
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--text-secondary);
-  margin-bottom: 4px;
-}
-
-.stat-value {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--text);
-}
-
-.stat-item.tengo .stat-value {
-  color: var(--tengo);
-}
-
-.stat-item.faltan .stat-value {
-  color: var(--falta);
-}
-
-.stat-item.repetidos .stat-value {
-  color: var(--repetido);
-}
-
-/* Responsive stats */
-@media (max-width: 640px) {
-  .collection-stats {
-    gap: 8px;
-  }
-  
-  .stat-item {
-    min-width: 90px;
-    padding: 8px 12px;
-  }
-  
-  .stat-value {
-    font-size: 1.25rem;
-  }
-}
-
-/* ========================================
-   3. QUITAR OPACIDAD DE CROMOS EN MODO CLARO
-   ======================================== */
-
+/* --------------------------------------------------------------------------
+   2. CROMOS SIN OPACIDAD - NÍTIDOS
+   -------------------------------------------------------------------------- */
 .card-item,
-.album-card-content {
-  opacity: 1 !important;
-}
-
-/* Asegurar que las imágenes se vean nítidas */
+.card-item *,
 .card-item img,
-.album-card-content img {
-  opacity: 1 !important;
-  filter: none !important;
-}
-
-/* Solo aplicar opacidad a estados específicos */
-.card-item.falta {
-  opacity: 0.6;
-}
-
-body.dark-mode .card-item.falta {
-  opacity: 0.5;
-}
-
-/* ========================================
-   4. ÁLBUMES MÁS SUTILES Y MODERNOS
-   ======================================== */
-
-.album-card {
-  position: relative;
-  padding: 20px;
-  border-radius: 16px;
-  background: var(--bg-card);
-  border: 2px solid transparent;
-  box-shadow: var(--shadow-sm);
-  transition: all 0.3s ease;
-  overflow: hidden;
-}
-
-/* Borde sutil con color del álbum */
-.album-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: var(--album-color, var(--accent));
-  opacity: 0.8;
-  transition: all 0.3s ease;
-}
-
-.album-card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-lg);
-  border-color: var(--album-color);
-}
-
-.album-card:hover::before {
-  height: 6px;
-  opacity: 1;
-}
-
-/* Título del álbum con color */
-.album-card h3 {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--text);
-  margin-bottom: 8px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.album-card h3::before {
-  content: '';
-  width: 4px;
-  height: 20px;
-  background: var(--album-color, var(--accent));
-  border-radius: 2px;
-}
-
-/* Descripción del álbum */
-.album-card p {
-  color: var(--text-secondary);
-  font-size: 0.875rem;
-  line-height: 1.5;
-}
-
-/* Badge de categoría con color sutil */
-.album-card .category-badge {
-  display: inline-block;
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  background: transparent;
-  border: 1.5px solid var(--album-color, var(--accent));
-  color: var(--album-color, var(--accent));
-  margin-top: 8px;
-}
-
-/* ========================================
-   5. INDICADOR DE COLOR EN VISTA DE ÁLBUM
-   ======================================== */
-
-/* Barra decorativa en el título de la colección */
-.collection-header {
-  position: relative;
-  padding: 24px;
-  padding-left: 32px;
-  margin-bottom: 24px;
-  background: var(--bg-card);
-  border-radius: 12px;
-  box-shadow: var(--shadow-sm);
-}
-
-.collection-header::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 6px;
-  background: var(--album-color, var(--accent));
-  border-radius: 12px 0 0 12px;
-}
-
-#collectionTitle {
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: var(--text);
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-#collectionTitle::before {
-  content: '';
-  width: 8px;
-  height: 8px;
-  background: var(--album-color, var(--accent));
-  border-radius: 50%;
-  box-shadow: 0 0 8px var(--album-color);
-}
-
-/* ========================================
-   6. CATEGORÍA BÁSICA POR DEFECTO
-   ======================================== */
-
-/* El color por defecto de Básica será blanco/gris claro */
-.category-badge.categoria-basica {
-  background: transparent !important;
-  border: 1.5px solid var(--border) !important;
-  color: var(--text-secondary) !important;
-}
-
-body.dark-mode .category-badge.categoria-basica {
-  border-color: var(--text-tertiary) !important;
-  color: var(--text-tertiary) !important;
-}
-
-/* ========================================
-   7. ESPACIADO EN DIÁLOGOS
-   ======================================== */
-
-.modal-content {
-  padding: 24px !important;
-  border-radius: 16px;
-  background: var(--bg-card);
-  box-shadow: var(--shadow-xl);
-  max-width: 500px;
-  width: 90%;
-  max-height: 90vh;
-  overflow-y: auto;
-}
-
-.modal-content h2 {
-  margin-bottom: 20px;
-  padding-bottom: 16px;
-  border-bottom: 2px solid var(--border);
-}
-
-.modal-content .form-group {
-  margin-bottom: 20px;
-}
-
-.modal-content .form-group:last-of-type {
-  margin-bottom: 24px;
-}
-
-.modal-content .modal-actions {
-  margin-top: 24px;
-  padding-top: 16px;
-  border-top: 1px solid var(--border);
-  display: flex;
-  gap: 12px;
-  justify-content: flex-end;
-}
-
-/* ========================================
-   8. TOAST MEJORADO (ABAJO DERECHA)
-   ======================================== */
-
-.toast {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  min-width: 300px;
-  max-width: 400px;
-  padding: 16px 20px;
-  border-radius: 12px;
-  background: var(--bg-card);
-  color: var(--text);
-  font-size: 0.875rem;
-  font-weight: 500;
-  box-shadow: var(--shadow-xl);
-  border-left: 4px solid var(--accent);
-  transform: translateX(500px);
-  opacity: 0;
-  transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-  z-index: 10000;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.toast.show {
-  transform: translateX(0);
-  opacity: 1;
-}
-
-/* Iconos para cada tipo de toast */
-.toast::before {
-  content: '✓';
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  font-weight: 700;
-  flex-shrink: 0;
-}
-
-.toast.success {
-  background: var(--bg-card);
-  border-left-color: var(--success);
-}
-
-.toast.success::before {
-  content: '✓';
-  background: var(--success);
-  color: white;
-}
-
-.toast.error {
-  background: var(--bg-card);
-  border-left-color: var(--danger);
-}
-
-.toast.error::before {
-  content: '✕';
-  background: var(--danger);
-  color: white;
-}
-
-.toast.warning {
-  background: var(--bg-card);
-  border-left-color: var(--warning);
-}
-
-.toast.warning::before {
-  content: '⚠';
-  background: var(--warning);
-  color: white;
-}
-
-.toast.info {
-  background: var(--bg-card);
-  border-left-color: var(--info);
-}
-
-.toast.info::before {
-  content: 'ℹ';
-  background: var(--info);
-  color: white;
-}
-
-/* Animación de salida */
-@keyframes toast-out {
-  to {
-    transform: translateX(500px);
-    opacity: 0;
-  }
-}
-
-.toast.hiding {
-  animation: toast-out 0.3s forwards;
-}
-
-/* Dark mode para toast */
-body.dark-mode .toast {
-  background: var(--bg-secondary);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-}
-
-/* ========================================
-   9. RESPONSIVE PARA MÓVILES
-   ======================================== */
-
-@media (max-width: 640px) {
-  .toast {
-    bottom: 16px;
-    right: 16px;
-    left: 16px;
-    min-width: auto;
-    max-width: none;
-  }
-  
-  .modal-content {
-    width: 95%;
-    padding: 20px !important;
-  }
-  
-  .album-card {
-    padding: 16px;
-  }
-  
-  .collection-header {
-    padding: 16px;
-    padding-left: 24px;
-  }
-}
-
-/* ========================================
-   10. MEJORAS ADICIONALES
-   ======================================== */
-
-/* Mejorar contraste de texto en modo claro */
-body:not(.dark-mode) .card-item .card-number,
-body:not(.dark-mode) .album-card-number {
-  color: var(--text) !important;
-  opacity: 1 !important;
-}
-
-body:not(.dark-mode) .card-item .card-name,
-body:not(.dark-mode) .album-card-name {
-  color: var(--text) !important;
-  opacity: 1 !important;
-}
-
-/* Asegurar que los inputs no tengan opacidad */
-input, select, textarea {
-  opacity: 1 !important;
-}
-
-/* Mejorar visibilidad de placeholder */
-input::placeholder,
-textarea::placeholder {
-  color: var(--text-tertiary);
-  opacity: 0.7;
-}
-
-body.dark-mode input::placeholder,
-body.dark-mode textarea::placeholder {
-  color: var(--text-tertiary);
-  opacity: 0.5;
-}
-/* ========================================
-   CORRECCIONES FINALES - AGREGAR AL FINAL
-   ======================================== */
-
-/* ========================================
-   1. GRID MÁXIMO 6 COLUMNAS
-   ======================================== */
-
-.cards-album-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 16px;
-  width: 100%;
-  padding: 20px;
-}
-
-@media (min-width: 768px) {
-  .cards-album-grid {
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    gap: 20px;
-  }
-}
-
-@media (min-width: 1024px) {
-  .cards-album-grid {
-    grid-template-columns: repeat(6, 1fr) !important;
-    gap: 20px;
-  }
-}
-
-@media (min-width: 1440px) {
-  .cards-album-grid {
-    grid-template-columns: repeat(6, 1fr) !important;
-    gap: 24px;
-  }
-}
-
-/* ========================================
-   2. SIN OPACIDAD EN CROMOS
-   ======================================== */
-
-.card-item {
-  opacity: 1 !important;
-}
-
-.card-item img {
-  opacity: 1 !important;
-  filter: none !important;
-}
-
 .card-item .card-number,
 .card-item .card-name,
-.card-item .card-team {
+.card-item .card-team,
+.card-item .card-category {
   opacity: 1 !important;
+  filter: none !important;
 }
 
-body:not(.dark-mode) .card-item {
-  opacity: 1 !important;
-}
-
-body:not(.dark-mode) .card-item * {
-  opacity: 1 !important;
-}
-
-/* Solo aplicar opacidad a estado "falta" */
+/* Solo los que faltan tienen opacidad reducida */
 .card-item.falta {
   opacity: 0.5 !important;
 }
@@ -4028,127 +3527,137 @@ body:not(.dark-mode) .card-item * {
   opacity: 1 !important;
 }
 
-/* ========================================
-   3. STATS HEADER MEJORADOS
-   ======================================== */
-
-.collection-stats {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  padding: 20px;
-  background: var(--bg-secondary);
-  border-radius: 12px;
-  margin-bottom: 24px;
+body.dark-mode .card-item.falta {
+  opacity: 0.6 !important;
 }
 
-.stat-item {
-  flex: 1;
-  min-width: 140px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 16px 20px;
-  background: var(--bg-card);
-  border-radius: 10px;
-  box-shadow: var(--shadow-sm);
-  transition: all 0.2s ease;
+/* --------------------------------------------------------------------------
+   3. STATS HEADER - EN LÍNEA Y BONITOS
+   -------------------------------------------------------------------------- */
+.stats-grid {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 16px !important;
+  padding: 20px !important;
+  background: var(--bg-secondary) !important;
+  border-radius: 12px !important;
+  margin-bottom: 24px !important;
 }
 
-.stat-item:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+.stat-card {
+  flex: 1 !important;
+  min-width: 160px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 16px !important;
+  padding: 20px !important;
+  background: var(--bg-card) !important;
+  border-radius: 12px !important;
+  box-shadow: var(--shadow-sm) !important;
+  transition: all 0.2s ease !important;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: var(--shadow-md) !important;
+}
+
+.stat-icon {
+  width: 48px !important;
+  height: 48px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 10px !important;
+  flex-shrink: 0 !important;
+}
+
+.stat-icon i,
+.stat-icon svg {
+  width: 24px !important;
+  height: 24px !important;
+}
+
+.stat-info {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 4px !important;
 }
 
 .stat-label {
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--text-secondary);
-  margin-bottom: 8px;
-  text-align: center;
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  color: var(--text-secondary) !important;
 }
 
 .stat-value {
-  font-size: 2rem;
-  font-weight: 700;
-  color: var(--text);
-  line-height: 1;
+  font-size: 1.75rem !important;
+  font-weight: 700 !important;
+  color: var(--text) !important;
+  line-height: 1 !important;
 }
 
-.stat-item.tengo {
-  border-top: 3px solid var(--tengo);
+.stat-progress {
+  flex-basis: 100% !important;
+  min-width: 100% !important;
 }
 
-.stat-item.tengo .stat-value {
-  color: var(--tengo);
-}
-
-.stat-item.faltan {
-  border-top: 3px solid var(--falta);
-}
-
-.stat-item.faltan .stat-value {
-  color: var(--falta);
-}
-
-.stat-item.repetidos {
-  border-top: 3px solid var(--repetido);
-}
-
-.stat-item.repetidos .stat-value {
-  color: var(--repetido);
-}
-
-@media (max-width: 640px) {
-  .collection-stats {
-    gap: 10px;
-    padding: 16px;
+@media (max-width: 768px) {
+  .stats-grid {
+    gap: 12px !important;
+    padding: 16px !important;
   }
   
-  .stat-item {
-    min-width: 100px;
-    padding: 12px 16px;
+  .stat-card {
+    min-width: 140px !important;
+    padding: 16px !important;
+  }
+  
+  .stat-icon {
+    width: 40px !important;
+    height: 40px !important;
   }
   
   .stat-value {
-    font-size: 1.5rem;
-  }
-  
-  .stat-label {
-    font-size: 0.7rem;
+    font-size: 1.5rem !important;
   }
 }
 
-/* ========================================
-   4. TOAST MEJORADO
-   ======================================== */
+@media (max-width: 480px) {
+  .stat-card {
+    flex-basis: calc(50% - 6px) !important;
+    min-width: auto !important;
+  }
+}
 
+/* --------------------------------------------------------------------------
+   4. TOAST ABAJO DERECHA
+   -------------------------------------------------------------------------- */
 .toast {
   position: fixed !important;
   bottom: 24px !important;
   right: 24px !important;
   top: auto !important;
   left: auto !important;
-  min-width: 320px;
-  max-width: 420px;
-  padding: 16px 20px;
-  border-radius: 12px;
-  background: var(--bg-card);
-  color: var(--text);
-  font-size: 0.875rem;
-  font-weight: 500;
-  box-shadow: var(--shadow-xl);
-  border-left: 4px solid var(--accent);
-  transform: translateX(500px);
-  opacity: 0;
-  transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-  z-index: 10000;
-  display: flex;
-  align-items: center;
-  gap: 12px;
+  min-width: 320px !important;
+  max-width: 420px !important;
+  padding: 16px 20px !important;
+  border-radius: 12px !important;
+  background: var(--bg-card) !important;
+  color: var(--text) !important;
+  font-size: 0.875rem !important;
+  font-weight: 500 !important;
+  box-shadow: var(--shadow-xl) !important;
+  border-left: 4px solid var(--accent) !important;
+  transform: translateX(500px) !important;
+  opacity: 0 !important;
+  transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55) !important;
+  z-index: 10000 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
 }
 
 .toast.show {
@@ -4157,72 +3666,57 @@ body:not(.dark-mode) .card-item * {
 }
 
 .toast::before {
-  content: '✓';
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  font-weight: 700;
-  flex-shrink: 0;
-  font-size: 14px;
+  content: '✓' !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 24px !important;
+  height: 24px !important;
+  border-radius: 50% !important;
+  font-weight: 700 !important;
+  flex-shrink: 0 !important;
+  font-size: 14px !important;
 }
 
 .toast.success {
-  border-left-color: var(--success);
+  border-left-color: var(--success) !important;
 }
 
 .toast.success::before {
-  content: '✓';
-  background: var(--success);
-  color: white;
+  content: '✓' !important;
+  background: var(--success) !important;
+  color: white !important;
 }
 
 .toast.error {
-  border-left-color: var(--danger);
+  border-left-color: var(--danger) !important;
 }
 
 .toast.error::before {
-  content: '✕';
-  background: var(--danger);
-  color: white;
+  content: '✕' !important;
+  background: var(--danger) !important;
+  color: white !important;
 }
 
 .toast.warning {
-  border-left-color: var(--warning);
+  border-left-color: var(--warning) !important;
 }
 
 .toast.warning::before {
-  content: '⚠';
-  background: var(--warning);
-  color: white;
-}
-
-.toast.info {
-  border-left-color: var(--info);
-}
-
-.toast.info::before {
-  content: 'ℹ';
-  background: var(--info);
-  color: white;
+  content: '⚠' !important;
+  background: var(--warning) !important;
+  color: white !important;
 }
 
 @keyframes toast-out {
   to {
-    transform: translateX(500px);
-    opacity: 0;
+    transform: translateX(500px) !important;
+    opacity: 0 !important;
   }
 }
 
 .toast.hiding {
-  animation: toast-out 0.3s forwards;
-}
-
-body.dark-mode .toast {
-  background: var(--bg-secondary);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  animation: toast-out 0.3s forwards !important;
 }
 
 @media (max-width: 640px) {
@@ -4230,87 +3724,20 @@ body.dark-mode .toast {
     bottom: 16px !important;
     right: 16px !important;
     left: 16px !important;
-    min-width: auto;
-    max-width: none;
+    min-width: auto !important;
+    max-width: none !important;
   }
 }
 
-/* ========================================
-   5. ÁLBUMES SUTILES
-   ======================================== */
-
-.album-card {
-  position: relative;
-  padding: 20px;
-  border-radius: 16px;
-  background: var(--bg-card);
-  border: 2px solid transparent;
-  box-shadow: var(--shadow-sm);
-  transition: all 0.3s ease;
-  overflow: hidden;
-}
-
-.album-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: var(--album-color, var(--accent));
-  opacity: 0.8;
-  transition: all 0.3s ease;
-}
-
-.album-card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-lg);
-  border-color: var(--album-color);
-}
-
-.album-card:hover::before {
-  height: 6px;
-  opacity: 1;
-}
-
-/* ========================================
-   6. DIÁLOGOS CON ESPACIADO
-   ======================================== */
-
-.modal-content {
-  padding: 24px !important;
-}
-
-.modal-content h2 {
-  margin-bottom: 20px;
-  padding-bottom: 16px;
-  border-bottom: 2px solid var(--border);
-}
-
-.modal-content .form-group {
-  margin-bottom: 20px;
-}
-
-.modal-content .modal-actions {
-  margin-top: 24px;
-  padding-top: 16px;
-  border-top: 1px solid var(--border);
-}
-
-/* ========================================
-   7. MEJORAR CONTRASTE EN MODO CLARO
-   ======================================== */
-
+/* --------------------------------------------------------------------------
+   5. MEJORAR CONTRASTE Y VISIBILIDAD
+   -------------------------------------------------------------------------- */
 body:not(.dark-mode) .card-number,
 body:not(.dark-mode) .card-name,
-body:not(.dark-mode) .card-team {
-  color: var(--text) !important;
-  text-shadow: none !important;
-}
-
+body:not(.dark-mode) .card-team,
 body:not(.dark-mode) input,
 body:not(.dark-mode) select,
 body:not(.dark-mode) textarea {
-  opacity: 1 !important;
   color: var(--text) !important;
+  opacity: 1 !important;
 }
