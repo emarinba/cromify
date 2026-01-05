@@ -27,11 +27,27 @@ const Utils = {
     const toast = document.getElementById('toast');
     if (!toast) return;
 
+    // Limpiar cualquier timeout anterior
+    if (this.toastTimeout) {
+      clearTimeout(this.toastTimeout);
+    }
+
     toast.textContent = message;
-    toast.className = `toast ${type} show`;
+    toast.className = `toast ${type}`;
     
+    // Mostrar con animación
     setTimeout(() => {
-      toast.classList.remove('show');
+      toast.classList.add('show');
+    }, 10);
+    
+    // Ocultar después de 3 segundos
+    this.toastTimeout = setTimeout(() => {
+      toast.classList.add('hiding');
+      
+      // Remover clases después de la animación
+      setTimeout(() => {
+        toast.classList.remove('show', 'hiding');
+      }, 300);
     }, 3000);
   },
 

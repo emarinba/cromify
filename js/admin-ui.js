@@ -18,6 +18,7 @@ const AdminUI = {
       
       const albums = await API.getAlbums();
       this.renderAdminAlbumsList(albums);
+      this.setupDashboardButtons();
       
     } catch (error) {
       console.error('Error loading admin dashboard:', error);
@@ -28,31 +29,42 @@ const AdminUI = {
   },
 
   /**
+   * Configurar botones del dashboard
+   */
+  setupDashboardButtons() {
+    const btnAnalytics = document.getElementById('btnViewAnalytics');
+    if (btnAnalytics) {
+      btnAnalytics.replaceWith(btnAnalytics.cloneNode(true));
+      document.getElementById('btnViewAnalytics').addEventListener('click', () => {
+        AnalyticsUI.showAnalyticsDashboard();
+      });
+    }
+  },
+
+  /**
    * Renderizar lista de álbumes para admin
    */
   renderAdminAlbumsList(albums) {
     UI.renderAlbumsList(albums, '#adminAlbumsGrid', (album) => {
+      const albumColor = album.category?.color || album.color || '#ED8936';
       return `
-        <div class="album-card admin-album-card" data-id="${album.id}">
-          <div class="album-card-header" style="background: ${album.color};">
-            <h3>${Utils.escapeHtml(album.name)}</h3>
-            <div class="album-actions">
-              <button class="btn-icon btn-edit-album" data-id="${album.id}" title="Editar">
-                <i data-lucide="edit-2"></i>
-              </button>
-              <button class="btn-icon btn-delete-album" data-id="${album.id}" title="Eliminar">
-                <i data-lucide="trash-2"></i>
-              </button>
-            </div>
+        <div class="album-card admin-album-card" data-id="${album.id}" style="--album-color: ${albumColor};">
+          <h3>${Utils.escapeHtml(album.name)}</h3>
+          <div class="album-info">
+            ${album.season ? `<span><i data-lucide="calendar"></i> ${Utils.escapeHtml(album.season)}</span>` : ''}
+            ${album.competition ? `<span><i data-lucide="trophy"></i> ${Utils.escapeHtml(album.competition)}</span>` : ''}
+            ${album.category ? `<span class="category-badge categoria-${album.category.name.toLowerCase().replace(/\s+/g, '-')}" style="border-color: ${albumColor}; color: ${albumColor};">${Utils.escapeHtml(album.category.name)}</span>` : ''}
           </div>
-          <div class="album-card-body">
-            <div class="album-info">
-              ${album.season ? `<span><i data-lucide="calendar"></i> ${Utils.escapeHtml(album.season)}</span>` : ''}
-              ${album.competition ? `<span><i data-lucide="trophy"></i> ${Utils.escapeHtml(album.competition)}</span>` : ''}
-            </div>
+          <div class="album-actions">
             <button class="btn btn-primary btn-manage-album" data-id="${album.id}">
               <i data-lucide="settings"></i>
               Gestionar Cromos
+            </button>
+            <button class="btn-icon btn-edit-album" data-id="${album.id}" title="Editar">
+              <i data-lucide="edit-2"></i>
+            </button>
+            <button class="btn-icon btn-delete-album" data-id="${album.id}" title="Eliminar">
+              <i data-lucide="trash-2"></i>
             </button>
           </div>
         </div>
