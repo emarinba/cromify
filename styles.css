@@ -3955,3 +3955,362 @@ body.dark-mode textarea::placeholder {
   color: var(--text-tertiary);
   opacity: 0.5;
 }
+/* ========================================
+   CORRECCIONES FINALES - AGREGAR AL FINAL
+   ======================================== */
+
+/* ========================================
+   1. GRID MÁXIMO 6 COLUMNAS
+   ======================================== */
+
+.cards-album-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 16px;
+  width: 100%;
+  padding: 20px;
+}
+
+@media (min-width: 768px) {
+  .cards-album-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 20px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .cards-album-grid {
+    grid-template-columns: repeat(6, 1fr) !important;
+    gap: 20px;
+  }
+}
+
+@media (min-width: 1440px) {
+  .cards-album-grid {
+    grid-template-columns: repeat(6, 1fr) !important;
+    gap: 24px;
+  }
+}
+
+/* ========================================
+   2. SIN OPACIDAD EN CROMOS
+   ======================================== */
+
+.card-item {
+  opacity: 1 !important;
+}
+
+.card-item img {
+  opacity: 1 !important;
+  filter: none !important;
+}
+
+.card-item .card-number,
+.card-item .card-name,
+.card-item .card-team {
+  opacity: 1 !important;
+}
+
+body:not(.dark-mode) .card-item {
+  opacity: 1 !important;
+}
+
+body:not(.dark-mode) .card-item * {
+  opacity: 1 !important;
+}
+
+/* Solo aplicar opacidad a estado "falta" */
+.card-item.falta {
+  opacity: 0.5 !important;
+}
+
+.card-item.falta * {
+  opacity: 1 !important;
+}
+
+/* ========================================
+   3. STATS HEADER MEJORADOS
+   ======================================== */
+
+.collection-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 20px;
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  margin-bottom: 24px;
+}
+
+.stat-item {
+  flex: 1;
+  min-width: 140px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 20px;
+  background: var(--bg-card);
+  border-radius: 10px;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s ease;
+}
+
+.stat-item:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1;
+}
+
+.stat-item.tengo {
+  border-top: 3px solid var(--tengo);
+}
+
+.stat-item.tengo .stat-value {
+  color: var(--tengo);
+}
+
+.stat-item.faltan {
+  border-top: 3px solid var(--falta);
+}
+
+.stat-item.faltan .stat-value {
+  color: var(--falta);
+}
+
+.stat-item.repetidos {
+  border-top: 3px solid var(--repetido);
+}
+
+.stat-item.repetidos .stat-value {
+  color: var(--repetido);
+}
+
+@media (max-width: 640px) {
+  .collection-stats {
+    gap: 10px;
+    padding: 16px;
+  }
+  
+  .stat-item {
+    min-width: 100px;
+    padding: 12px 16px;
+  }
+  
+  .stat-value {
+    font-size: 1.5rem;
+  }
+  
+  .stat-label {
+    font-size: 0.7rem;
+  }
+}
+
+/* ========================================
+   4. TOAST MEJORADO
+   ======================================== */
+
+.toast {
+  position: fixed !important;
+  bottom: 24px !important;
+  right: 24px !important;
+  top: auto !important;
+  left: auto !important;
+  min-width: 320px;
+  max-width: 420px;
+  padding: 16px 20px;
+  border-radius: 12px;
+  background: var(--bg-card);
+  color: var(--text);
+  font-size: 0.875rem;
+  font-weight: 500;
+  box-shadow: var(--shadow-xl);
+  border-left: 4px solid var(--accent);
+  transform: translateX(500px);
+  opacity: 0;
+  transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.toast.show {
+  transform: translateX(0) !important;
+  opacity: 1 !important;
+}
+
+.toast::before {
+  content: '✓';
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  font-weight: 700;
+  flex-shrink: 0;
+  font-size: 14px;
+}
+
+.toast.success {
+  border-left-color: var(--success);
+}
+
+.toast.success::before {
+  content: '✓';
+  background: var(--success);
+  color: white;
+}
+
+.toast.error {
+  border-left-color: var(--danger);
+}
+
+.toast.error::before {
+  content: '✕';
+  background: var(--danger);
+  color: white;
+}
+
+.toast.warning {
+  border-left-color: var(--warning);
+}
+
+.toast.warning::before {
+  content: '⚠';
+  background: var(--warning);
+  color: white;
+}
+
+.toast.info {
+  border-left-color: var(--info);
+}
+
+.toast.info::before {
+  content: 'ℹ';
+  background: var(--info);
+  color: white;
+}
+
+@keyframes toast-out {
+  to {
+    transform: translateX(500px);
+    opacity: 0;
+  }
+}
+
+.toast.hiding {
+  animation: toast-out 0.3s forwards;
+}
+
+body.dark-mode .toast {
+  background: var(--bg-secondary);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+@media (max-width: 640px) {
+  .toast {
+    bottom: 16px !important;
+    right: 16px !important;
+    left: 16px !important;
+    min-width: auto;
+    max-width: none;
+  }
+}
+
+/* ========================================
+   5. ÁLBUMES SUTILES
+   ======================================== */
+
+.album-card {
+  position: relative;
+  padding: 20px;
+  border-radius: 16px;
+  background: var(--bg-card);
+  border: 2px solid transparent;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.album-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--album-color, var(--accent));
+  opacity: 0.8;
+  transition: all 0.3s ease;
+}
+
+.album-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--album-color);
+}
+
+.album-card:hover::before {
+  height: 6px;
+  opacity: 1;
+}
+
+/* ========================================
+   6. DIÁLOGOS CON ESPACIADO
+   ======================================== */
+
+.modal-content {
+  padding: 24px !important;
+}
+
+.modal-content h2 {
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid var(--border);
+}
+
+.modal-content .form-group {
+  margin-bottom: 20px;
+}
+
+.modal-content .modal-actions {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+/* ========================================
+   7. MEJORAR CONTRASTE EN MODO CLARO
+   ======================================== */
+
+body:not(.dark-mode) .card-number,
+body:not(.dark-mode) .card-name,
+body:not(.dark-mode) .card-team {
+  color: var(--text) !important;
+  text-shadow: none !important;
+}
+
+body:not(.dark-mode) input,
+body:not(.dark-mode) select,
+body:not(.dark-mode) textarea {
+  opacity: 1 !important;
+  color: var(--text) !important;
+}
