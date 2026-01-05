@@ -19,13 +19,13 @@ const App = {
       // Inicializar UI
       UI.init();
 
-      // Configurar listeners de autenticación PRIMERO
+      // Configurar listeners de autenticación
       Auth.onAuthStateChange(async (event, session, user) => {
-        console.log('🔵 Auth event:', event, user?.email || 'no user');
+        console.log('🔵 Auth state changed:', event, user?.role);
         
         if (event === 'SIGNED_IN' && user) {
           try {
-            console.log('✅ Usuario autenticado:', user.email, 'Role:', user.role);
+            console.log('✅ Usuario autenticado:', user.email);
             await UI.showApp();
             Utils.hideLoader();
             Utils.showToast(`¡Bienvenido ${user.name}!`, 'success');
@@ -39,9 +39,6 @@ const App = {
           UI.showAuthScreen();
           Utils.hideLoader();
           Utils.showToast('Sesión cerrada', 'success');
-        } else if (event === 'INITIAL_SESSION') {
-          console.log('🔵 Sesión inicial detectada');
-          // No hacer nada aquí, esperar a que Auth.init() maneje la sesión
         }
       });
 
@@ -49,11 +46,8 @@ const App = {
       const isAuthenticated = await Auth.init();
       
       if (isAuthenticated) {
-        console.log('✅ Sesión restaurada, mostrando app...');
-        // Solo mostrar app si el evento no lo hizo ya
-        if (Auth.getCurrentUser()) {
-          await UI.showApp();
-        }
+        console.log('✅ Sesión restaurada');
+        UI.showApp();
       } else {
         console.log('ℹ️ No hay sesión activa');
         UI.showAuthScreen();
@@ -239,6 +233,17 @@ const App = {
         Utils.showToast('Demasiados intentos. Espera unos minutos.', 'error');
       } else {
         Utils.showToast('Error al crear cuenta: ' + error.message, 'error');
+      }
+    } finally {
+      Utils.hideLoader();
+    }
+  },
+      console.error('Register error:', error);
+      
+      if (error.message.includes('already registered')) {
+        Utils.showToast('Este email ya está registrado', 'error');
+      } else {
+        Utils.showToast('Error al crear cuenta', 'error');
       }
     } finally {
       Utils.hideLoader();
