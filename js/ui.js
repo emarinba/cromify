@@ -73,15 +73,37 @@ const UI = {
   /**
    * Mostrar aplicación principal
    */
-  showApp() {
-    this.showAppHeader();
-    this.updateUserInfo();
-    
-    // Mostrar vista según el rol
-    if (Auth.isAdmin()) {
-      AdminUI.showDashboard();
-    } else {
-      UserUI.showDashboard();
+  async showApp() {
+    try {
+      console.log('🎯 Mostrando aplicación...');
+      
+      const user = Auth.getCurrentUser();
+      console.log('Usuario actual:', user);
+      
+      if (!user) {
+        console.error('❌ No hay usuario actual');
+        this.showAuthScreen();
+        return;
+      }
+      
+      console.log('✅ Usuario encontrado:', user.email, 'Role:', user.role);
+      
+      this.showAppHeader();
+      this.updateUserInfo();
+      
+      // Mostrar vista según el rol
+      if (Auth.isAdmin()) {
+        console.log('👑 Cargando dashboard de administrador...');
+        await AdminUI.showDashboard();
+      } else {
+        console.log('👤 Cargando dashboard de usuario...');
+        await UserUI.showDashboard();
+      }
+      
+      console.log('✅ App cargada correctamente');
+    } catch (error) {
+      console.error('❌ Error en showApp:', error);
+      throw error;
     }
   },
 
@@ -112,16 +134,26 @@ const UI = {
     const userName = document.getElementById('userNameDisplay');
     if (userName) userName.textContent = user.name;
 
-    // Avatar (iniciales)
+    // Avatar
     const avatar = document.getElementById('userAvatar');
     if (avatar) {
-      const initials = user.name
-        .split(' ')
-        .map(n => n[0])
-        .join('')
-        .toUpperCase()
-        .substring(0, 2);
-      avatar.textContent = initials;
+      if (user.avatar_url) {
+        // Si tiene foto de Google, mostrarla
+        avatar.style.backgroundImage = `url(${user.avatar_url})`;
+        avatar.style.backgroundSize = 'cover';
+        avatar.style.backgroundPosition = 'center';
+        avatar.textContent = '';
+      } else {
+        // Si no, mostrar iniciales
+        const initials = user.name
+          .split(' ')
+          .map(n => n[0])
+          .join('')
+          .toUpperCase()
+          .substring(0, 2);
+        avatar.textContent = initials;
+        avatar.style.backgroundImage = 'none';
+      }
     }
 
     // Badge de admin si corresponde

@@ -20,23 +20,12 @@ const App = {
       UI.init();
 
       // Configurar listeners de autenticación
-      Auth.onAuthStateChange(async (event, session, user) => {
-        console.log('🔵 Auth state changed:', event, user?.role);
+      Auth.onAuthStateChange((event, session, user) => {
+        console.log('Auth state changed:', event, user?.role);
         
-        if (event === 'SIGNED_IN' && user) {
-          try {
-            console.log('✅ Usuario autenticado:', user.email);
-            await UI.showApp();
-            Utils.hideLoader();
-            Utils.showToast(`¡Bienvenido ${user.name}!`, 'success');
-          } catch (error) {
-            console.error('❌ Error mostrando app:', error);
-            Utils.hideLoader();
-            Utils.showToast('Error al cargar la aplicación', 'error');
-          }
+        if (event === 'SIGNED_IN') {
+          UI.showApp();
         } else if (event === 'SIGNED_OUT') {
-          console.log('👋 Usuario deslogueado');
-          Utils.hideLoader();
           UI.showAuthScreen();
         }
       });
@@ -118,22 +107,6 @@ const App = {
         await this.handleRegister(e);
       });
     }
-
-    // Botones de Google
-    const btnLoginGoogle = document.getElementById('btnLoginGoogle');
-    const btnRegisterGoogle = document.getElementById('btnRegisterGoogle');
-
-    if (btnLoginGoogle) {
-      btnLoginGoogle.addEventListener('click', async () => {
-        await this.handleGoogleLogin();
-      });
-    }
-
-    if (btnRegisterGoogle) {
-      btnRegisterGoogle.addEventListener('click', async () => {
-        await this.handleGoogleLogin();
-      });
-    }
   },
 
   /**
@@ -157,20 +130,15 @@ const App = {
 
     try {
       Utils.showLoader();
-      console.log('🔵 Intentando login...');
-      
       await Auth.login(email, password);
-      
-      console.log('✅ Login exitoso, esperando carga de perfil...');
-      // NO llamar a UI.showApp() aquí
-      // El evento SIGNED_IN lo hará automáticamente
-      
+      Utils.showToast('¡Bienvenido!', 'success');
+      UI.showApp();
     } catch (error) {
-      console.error('❌ Login error:', error);
-      Utils.hideLoader();
+      console.error('Login error:', error);
       Utils.showToast('Credenciales incorrectas', 'error');
+    } finally {
+      Utils.hideLoader();
     }
-    // NO poner hideLoader() aquí, se hará cuando showApp termine
   },
 
   /**
@@ -215,21 +183,6 @@ const App = {
         Utils.showToast('Error al crear cuenta', 'error');
       }
     } finally {
-      Utils.hideLoader();
-    }
-  },
-
-  /**
-   * Manejar login con Google
-   */
-  async handleGoogleLogin() {
-    try {
-      Utils.showLoader();
-      await Auth.loginWithGoogle();
-      // La redirección es automática, el loader se mantendrá visible
-    } catch (error) {
-      console.error('Google login error:', error);
-      Utils.showToast('Error al iniciar sesión con Google', 'error');
       Utils.hideLoader();
     }
   },
