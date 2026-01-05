@@ -191,19 +191,24 @@ const UI = {
 
     try {
       Utils.showLoader();
+      console.log('🔵 Cerrando sesión...');
+      
       await Auth.logout();
+      
+      console.log('✅ Sesión cerrada, esperando evento SIGNED_OUT...');
       
       // Limpiar estado
       this.currentView = null;
       
-      // Mostrar pantalla de login
-      this.showAuthScreen();
-      Utils.showToast('Sesión cerrada', 'success');
+      // NO llamar a showAuthScreen() aquí
+      // El evento SIGNED_OUT lo hará automáticamente
+      
     } catch (error) {
-      Utils.showToast('Error al cerrar sesión', 'error');
-    } finally {
+      console.error('❌ Error al cerrar sesión:', error);
       Utils.hideLoader();
+      Utils.showToast('Error al cerrar sesión', 'error');
     }
+    // NO poner hideLoader() aquí, se hará en el evento
   },
 
   /**

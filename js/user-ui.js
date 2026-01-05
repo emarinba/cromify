@@ -232,9 +232,11 @@ const UserUI = {
       Utils.showLoader();
       this.currentCollectionId = collectionId;
       
-      // Cargar datos
-      const [collection, cards, categories, stats] = await Promise.all([
-        API.getCollection(collectionId),
+      // Primero cargar la colección para obtener el album_id
+      const collection = await API.getCollection(collectionId);
+      
+      // Luego cargar el resto en paralelo
+      const [cards, categories, stats] = await Promise.all([
         API.getUserCards(collectionId),
         API.getCategories(collection.album_id),
         API.getCollectionStats(collectionId)

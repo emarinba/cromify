@@ -36,8 +36,9 @@ const App = {
           }
         } else if (event === 'SIGNED_OUT') {
           console.log('👋 Usuario deslogueado');
-          Utils.hideLoader();
           UI.showAuthScreen();
+          Utils.hideLoader();
+          Utils.showToast('Sesión cerrada', 'success');
         }
       });
 
@@ -200,13 +201,43 @@ const App = {
 
     try {
       Utils.showLoader();
-      await Auth.register(email, password, name);
-      Utils.showToast('Cuenta creada. Revisa tu email para confirmar.', 'success');
+      console.log('🔵 Registrando usuario...');
       
-      // Cambiar a login
-      document.getElementById('toggleAuthMode').click();
+      const result = await Auth.register(email, password, name);
+      
+      console.log('✅ Registro exitoso:', result);
+      
+      // Verificar si necesita confirmación de email
+      if (result.user && !result.session) {
+        // Email de confirmación enviado
+        Utils.showToast('Cuenta creada. Revisa tu email para confirmar.', 'success');
+        console.log('📧 Email de confirmación enviado');
+        
+        // Cambiar a login
+        setTimeout(() => {
+          document.getElementById('toggleAuthMode')?.click();
+        }, 100);
+      } else if (result.session) {
+        // Auto-login (confirmación desactivada)
+        console.log('✅ Auto-login después de registro');
+        Utils.showToast('¡Cuenta creada y sesión iniciada!', 'success');
+        // El evento SIGNED_IN manejará el resto
+      }
       
     } catch (error) {
+      console.error('❌ Register error:', error);
+      
+      if (error.message?.includes('already registered') || error.message?.includes('User already registered')) {
+        Utils.showToast('Este email ya está registrado', 'error');
+      } else if (error.message?.includes('Email rate limit')) {
+        Utils.showToast('Demasiados intentos. Espera unos minutos.', 'error');
+      } else {
+        Utils.showToast('Error al crear cuenta: ' + error.message, 'error');
+      }
+    } finally {
+      Utils.hideLoader();
+    }
+  },
       console.error('Register error:', error);
       
       if (error.message.includes('already registered')) {
