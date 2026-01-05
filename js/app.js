@@ -21,11 +21,12 @@ const App = {
 
       // Configurar listeners de autenticación PRIMERO
       Auth.onAuthStateChange(async (event, session, user) => {
-        console.log('🔵 Auth event:', event, user?.email || 'no user');
+        console.log('🔵 Auth event en App:', event, user?.email || 'no user');
         
         if (event === 'SIGNED_IN' && user) {
           try {
             console.log('✅ Usuario autenticado:', user.email, 'Role:', user.role);
+            Utils.showLoader();
             await UI.showApp();
             Utils.hideLoader();
             Utils.showToast(`¡Bienvenido ${user.name}!`, 'success');

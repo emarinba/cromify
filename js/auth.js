@@ -16,9 +16,16 @@ const Auth = {
       
       if (session) {
         console.log('✅ Sesión encontrada, cargando perfil...');
-        await this.loadUserProfile(session.user.id);
-        console.log('✅ Auth inicializado correctamente');
-        return true;
+        try {
+          await this.loadUserProfile(session.user.id);
+          console.log('✅ Auth inicializado correctamente');
+          return true;
+        } catch (error) {
+          console.error('❌ Error cargando perfil en init:', error);
+          // Si falla, intentar crear el usuario
+          await this.ensureUserExists(session.user);
+          return true;
+        }
       }
       
       console.log('ℹ️ No hay sesión activa');
@@ -26,6 +33,51 @@ const Auth = {
     } catch (error) {
       console.error('❌ Error initializing auth:', error);
       return false;
+    }
+  },
+
+  /**
+   * Asegurar que el usuario existe en la tabla users
+   */
+  async ensureUserExists(authUser) {
+    try {
+      console.log('🔧 Verificando si usuario existe en BD...');
+      
+      // Intentar cargar primero
+      const { data: existingUser } = await supabaseClient
+        .from('users')
+        .select('*')
+        .eq('id', authUser.id)
+        .single();
+      
+      if (existingUser) {
+        console.log('✅ Usuario encontrado:', existingUser.email);
+        this.currentUser = existingUser;
+        return existingUser;
+      }
+      
+      // Si no existe, crearlo
+      console.log('⚡ Creando usuario en BD...');
+      const { data: newUser, error } = await supabaseClient
+        .from('users')
+        .insert([{
+          id: authUser.id,
+          email: authUser.email,
+          name: authUser.user_metadata?.name || authUser.email.split('@')[0],
+          role: 'user'
+        }])
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      console.log('✅ Usuario creado:', newUser.email);
+      this.currentUser = newUser;
+      return newUser;
+      
+    } catch (error) {
+      console.error('❌ Error en ensureUserExists:', error);
+      throw error;
     }
   },
 
@@ -72,22 +124,22 @@ const Auth = {
    */
   async register(email, password, name) {
     try {
+      console.log('🔵 Registrando usuario:', email);
+      
       const { data, error } = await supabaseClient.auth.signUp({
         email,
         password,
         options: {
-          data: {
-            name: name
-          }
+          data: { name }
         }
       });
 
       if (error) throw error;
 
-      // El trigger creará automáticamente el perfil en la tabla users
+      console.log('✅ Usuario registrado:', data);
       return data;
     } catch (error) {
-      console.error('Error registering:', error);
+      console.error('❌ Error registrando:', error);
       throw error;
     }
   },
@@ -97,6 +149,8 @@ const Auth = {
    */
   async login(email, password) {
     try {
+      console.log('🔵 Iniciando sesión:', email);
+      
       const { data, error } = await supabaseClient.auth.signInWithPassword({
         email,
         password
@@ -104,16 +158,25 @@ const Auth = {
 
       if (error) throw error;
 
-      await this.loadUserProfile(data.user.id);
+      console.log('✅ Sesión iniciada:', data.user.id);
+      
+      // Cargar perfil inmediatamente
+      try {
+        await this.loadUserProfile(data.user.id);
+      } catch (profileError) {
+        console.error('❌ Error cargando perfil, intentando crear usuario...');
+        await this.ensureUserExists(data.user);
+      }
+      
       return data;
     } catch (error) {
-      console.error('Error logging in:', error);
+      console.error('❌ Error en login:', error);
       throw error;
     }
   },
 
   /**
-   * Iniciar sesión con Google
+   * Login con Google
    */
   async loginWithGoogle() {
     try {
@@ -122,31 +185,16 @@ const Auth = {
       const { data, error } = await supabaseClient.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: window.location.origin,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
-          }
+          redirectTo: window.location.origin
         }
       });
 
-      if (error) {
-        console.error('❌ Error en OAuth:', error);
-        throw error;
-      }
+      if (error) throw error;
       
-      console.log('✅ OAuth iniciado correctamente');
+      console.log('✅ Redirigiendo a Google...');
       return data;
     } catch (error) {
-      console.error('❌ Error logging in with Google:', error);
-      
-      // Mensajes específicos según el error
-      if (error.message?.includes('popup')) {
-        throw new Error('Por favor, permite popups para este sitio');
-      } else if (error.message?.includes('provider')) {
-        throw new Error('Google OAuth no está configurado. Contacta al administrador.');
-      }
-      
+      console.error('❌ Error en Google login:', error);
       throw error;
     }
   },
@@ -156,13 +204,16 @@ const Auth = {
    */
   async logout() {
     try {
+      console.log('🔵 Cerrando sesión...');
+      
       const { error } = await supabaseClient.auth.signOut();
       if (error) throw error;
 
       this.currentUser = null;
+      console.log('✅ Sesión cerrada');
       return true;
     } catch (error) {
-      console.error('Error logging out:', error);
+      console.error('❌ Error logging out:', error);
       throw error;
     }
   },
@@ -186,34 +237,49 @@ const Auth = {
    */
   onAuthStateChange(callback) {
     return supabaseClient.auth.onAuthStateChange(async (event, session) => {
-      console.log('🔵 Auth event en Auth.js:', event);
+      console.log('🔵 Auth event:', event, session?.user?.email || 'no session');
       
-      // Solo cargar perfil en SIGNED_IN, no en INITIAL_SESSION
-      if (event === 'SIGNED_IN' && session && !this.currentUser) {
-        console.log('⚡ Cargando perfil por SIGNED_IN...');
-        try {
-          // Esperar un poco para que el trigger cree el usuario
-          await new Promise(resolve => setTimeout(resolve, 500));
-          await this.loadUserProfile(session.user.id);
-        } catch (error) {
-          console.error('❌ Error cargando perfil en SIGNED_IN:', error);
-          // Reintentar una vez
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          try {
-            await this.loadUserProfile(session.user.id);
-          } catch (retryError) {
-            console.error('❌ Error en reintento:', retryError);
+      try {
+        if (event === 'SIGNED_IN' && session) {
+          console.log('⚡ SIGNED_IN detectado');
+          
+          // Solo cargar si no está ya cargado
+          if (!this.currentUser || this.currentUser.id !== session.user.id) {
+            console.log('⚡ Cargando perfil...');
+            
+            // Dar tiempo al trigger de crear el usuario
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            try {
+              await this.loadUserProfile(session.user.id);
+            } catch (error) {
+              console.error('❌ Error cargando perfil, creando usuario...');
+              await this.ensureUserExists(session.user);
+            }
+          } else {
+            console.log('⚡ Usuario ya cargado');
           }
+          
+          callback(event, session, this.currentUser);
+          
+        } else if (event === 'SIGNED_OUT') {
+          console.log('👋 SIGNED_OUT detectado');
+          this.currentUser = null;
+          callback(event, null, null);
+          
+        } else if (event === 'INITIAL_SESSION' && session) {
+          console.log('⚡ INITIAL_SESSION detectado (Auth.init() manejará)');
+          // No hacer nada, Auth.init() ya carga el perfil
+          callback(event, session, this.currentUser);
+          
+        } else {
+          // Otros eventos
+          callback(event, session, this.currentUser);
         }
-      } else if (event === 'SIGNED_OUT') {
-        console.log('👋 Limpiando usuario por SIGNED_OUT');
-        this.currentUser = null;
-      } else if (event === 'INITIAL_SESSION' && session) {
-        console.log('⚡ Sesión inicial detectada, dejando que Auth.init() maneje');
-        // No cargar perfil aquí, Auth.init() ya lo hace
+      } catch (error) {
+        console.error('❌ Error en onAuthStateChange:', error);
+        callback(event, session, null);
       }
-      
-      callback(event, session, this.currentUser);
     });
   }
 };
