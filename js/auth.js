@@ -1,10 +1,10 @@
 /**
- * auth.js - VERSIÓN CON TIMEOUT Y DIAGNÓSTICO
+ * auth.js - Versión SIMPLE que funciona
+ * Sin timeout, sin complejidad - Solo protección contra doble carga
  */
 
 const Auth = {
   currentUser: null,
-  isLoadingProfile: false,
 
   /**
    * Inicializar autenticación
@@ -15,128 +15,32 @@ const Auth = {
       const { data: { session } } = await supabaseClient.auth.getSession();
       
       if (session) {
-        console.log('✅ Sesión encontrada:', session.user.email);
-        console.log('🔵 User ID:', session.user.id);
-        
-        this.isLoadingProfile = true;
-        
-        try {
-          const user = await this.loadUserProfileWithTimeout(session.user.id, 10000); // 10 segundos
-          console.log('✅ Auth inicializado correctamente');
-          return true;
-        } catch (error) {
-          console.error('❌ Error cargando perfil en init:', error);
-          console.error('🔧 Intentando crear usuario...');
-          
-          try {
-            await this.ensureUserExists(session.user);
-            console.log('✅ Usuario creado, Auth inicializado');
-            return true;
-          } catch (createError) {
-            console.error('❌ Error crítico creando usuario:', createError);
-            console.error('⚠️ EJECUTA EL SQL DE DIAGNÓSTICO EN SUPABASE');
-            return false;
-          }
-        } finally {
-          this.isLoadingProfile = false;
-        }
+        console.log('✅ Sesión encontrada, cargando perfil...');
+        await this.loadUserProfile(session.user.id);
+        console.log('✅ Auth inicializado correctamente');
+        return true;
       }
       
       console.log('ℹ️ No hay sesión activa');
       return false;
     } catch (error) {
       console.error('❌ Error initializing auth:', error);
-      this.isLoadingProfile = false;
       return false;
     }
   },
 
   /**
-   * Cargar perfil con timeout
-   */
-  async loadUserProfileWithTimeout(userId, timeoutMs = 10000) {
-    console.log(`🔵 Cargando perfil con timeout de ${timeoutMs}ms...`);
-    
-    return Promise.race([
-      this.loadUserProfile(userId),
-      new Promise((_, reject) => 
-        setTimeout(() => {
-          console.error(`❌ TIMEOUT después de ${timeoutMs}ms`);
-          console.error('⚠️ La consulta está tardando demasiado');
-          console.error('💡 Posibles causas:');
-          console.error('   1. RLS bloqueando la consulta');
-          console.error('   2. Usuario no existe en la tabla users');
-          console.error('   3. Índice faltante en la BD');
-          reject(new Error(`Timeout cargando perfil después de ${timeoutMs}ms`));
-        }, timeoutMs)
-      )
-    ]);
-  },
-
-  /**
-   * Asegurar que el usuario existe
-   */
-  async ensureUserExists(authUser) {
-    try {
-      console.log('🔧 ensureUserExists para:', authUser.email);
-      
-      // Intentar cargar primero
-      const { data: existingUser, error: fetchError } = await supabaseClient
-        .from('users')
-        .select('*')
-        .eq('id', authUser.id)
-        .maybeSingle();
-      
-      if (existingUser) {
-        console.log('✅ Usuario ya existe:', existingUser.email);
-        this.currentUser = existingUser;
-        return existingUser;
-      }
-      
-      console.log('⚡ Usuario no existe, creando...');
-      
-      // Crear usuario
-      const { data: newUser, error } = await supabaseClient
-        .from('users')
-        .insert([{
-          id: authUser.id,
-          email: authUser.email,
-          name: authUser.user_metadata?.name || authUser.email.split('@')[0],
-          role: 'user'
-        }])
-        .select()
-        .single();
-      
-      if (error) {
-        console.error('❌ Error en INSERT:', error);
-        throw error;
-      }
-      
-      console.log('✅ Usuario creado:', newUser.email);
-      this.currentUser = newUser;
-      return newUser;
-      
-    } catch (error) {
-      console.error('❌ Error en ensureUserExists:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Cargar perfil de usuario
+   * Cargar perfil de usuario - CON PROTECCIÓN CONTRA DOBLE CARGA
    */
   async loadUserProfile(userId) {
     try {
       console.log('🔵 Cargando perfil de usuario:', userId);
       
-      // Si ya está cargado, usar caché
+      // ✅ CLAVE: Si ya está cargado, usar caché
       if (this.currentUser && this.currentUser.id === userId) {
-        console.log('⚡ Perfil ya en caché');
+        console.log('⚡ Perfil ya cargado, usando caché');
         return this.currentUser;
       }
-      
-      console.log('🔍 Consultando BD...');
-      const startTime = Date.now();
       
       const { data, error } = await supabaseClient
         .from('users')
@@ -144,20 +48,14 @@ const Auth = {
         .eq('id', userId)
         .single();
 
-      const elapsed = Date.now() - startTime;
-      console.log(`⏱️ Consulta tardó ${elapsed}ms`);
-
       if (error) {
         console.error('❌ Error en consulta:', error);
-        console.error('📋 Error code:', error.code);
-        console.error('📋 Error message:', error.message);
-        console.error('📋 Error details:', error.details);
         throw error;
       }
       
       if (!data) {
-        console.error('❌ Consulta devolvió null (usuario no existe o RLS bloqueando)');
-        throw new Error('Usuario no encontrado en BD');
+        console.error('❌ No se encontró el usuario');
+        throw new Error('Usuario no encontrado en la base de datos');
       }
 
       console.log('✅ Perfil cargado:', data.email, 'Role:', data.role);
@@ -186,7 +84,7 @@ const Auth = {
 
       if (error) throw error;
 
-      console.log('✅ Usuario registrado');
+      console.log('✅ Usuario registrado:', data);
       return data;
     } catch (error) {
       console.error('❌ Error registrando:', error);
@@ -201,8 +99,6 @@ const Auth = {
     try {
       console.log('🔵 Iniciando sesión:', email);
       
-      this.isLoadingProfile = true;
-      
       const { data, error } = await supabaseClient.auth.signInWithPassword({
         email,
         password
@@ -212,20 +108,12 @@ const Auth = {
 
       console.log('✅ Sesión iniciada:', data.user.id);
       
-      // Cargar perfil con timeout de 10 segundos
-      try {
-        await this.loadUserProfileWithTimeout(data.user.id, 10000);
-      } catch (profileError) {
-        console.error('❌ Error/timeout cargando perfil, creando usuario...');
-        await this.ensureUserExists(data.user);
-      } finally {
-        this.isLoadingProfile = false;
-      }
+      // Cargar perfil inmediatamente
+      await this.loadUserProfile(data.user.id);
       
       return data;
     } catch (error) {
       console.error('❌ Error en login:', error);
-      this.isLoadingProfile = false;
       throw error;
     }
   },
@@ -265,7 +153,6 @@ const Auth = {
       if (error) throw error;
 
       this.currentUser = null;
-      this.isLoadingProfile = false;
       console.log('✅ Sesión cerrada');
       return true;
     } catch (error) {
@@ -275,7 +162,7 @@ const Auth = {
   },
 
   /**
-   * Verificar si es admin
+   * Verificar si el usuario es admin
    */
   isAdmin() {
     return this.currentUser && this.currentUser.role === 'admin';
@@ -290,71 +177,31 @@ const Auth = {
 
   /**
    * Escuchar cambios de autenticación
+   * ✅ CLAVE: Solo cargar si NO está ya cargado
    */
   onAuthStateChange(callback) {
     return supabaseClient.auth.onAuthStateChange(async (event, session) => {
       console.log('🔵 Auth event:', event, session?.user?.email || 'no session');
       
-      try {
-        if (event === 'SIGNED_IN' && session) {
-          console.log('⚡ SIGNED_IN detectado');
-          
-          // Si ya está cargando, saltar
-          if (this.isLoadingProfile) {
-            console.log('⚡ Ya se está cargando perfil, saltando...');
-            callback(event, session, this.currentUser);
-            return;
-          }
-          
-          // Si ya está cargado, saltar
-          if (this.currentUser && this.currentUser.id === session.user.id) {
-            console.log('⚡ Usuario ya cargado, saltando...');
-            callback(event, session, this.currentUser);
-            return;
-          }
-          
-          console.log('⚡ Cargando perfil...');
-          this.isLoadingProfile = true;
-          
-          try {
-            // Esperar un poco al trigger
-            await new Promise(resolve => setTimeout(resolve, 500));
-            
-            // Cargar con timeout de 10 segundos
-            await this.loadUserProfileWithTimeout(session.user.id, 10000);
-            console.log('✅ Perfil cargado en SIGNED_IN');
-          } catch (error) {
-            console.error('❌ Error/timeout en SIGNED_IN, creando usuario...');
-            try {
-              await this.ensureUserExists(session.user);
-            } catch (createError) {
-              console.error('❌ Error crítico en SIGNED_IN:', createError);
-              console.error('⚠️ EJECUTA EL SQL: DIAGNOSTICO-USUARIO.sql');
-            }
-          } finally {
-            this.isLoadingProfile = false;
-          }
-          
-          callback(event, session, this.currentUser);
-          
-        } else if (event === 'SIGNED_OUT') {
-          console.log('👋 SIGNED_OUT detectado');
-          this.currentUser = null;
-          this.isLoadingProfile = false;
-          callback(event, null, null);
-          
-        } else if (event === 'INITIAL_SESSION' && session) {
-          console.log('⚡ INITIAL_SESSION detectado');
-          callback(event, session, this.currentUser);
-          
-        } else {
-          callback(event, session, this.currentUser);
+      if (event === 'SIGNED_IN' && session && !this.currentUser) {
+        // ✅ Solo cargar si NO está cargado
+        console.log('⚡ Cargando perfil por SIGNED_IN...');
+        try {
+          // Esperar un poco para que el trigger cree el usuario
+          await new Promise(resolve => setTimeout(resolve, 500));
+          await this.loadUserProfile(session.user.id);
+        } catch (error) {
+          console.error('❌ Error cargando perfil en SIGNED_IN:', error);
         }
-      } catch (error) {
-        console.error('❌ Error en onAuthStateChange:', error);
-        this.isLoadingProfile = false;
-        callback(event, session, null);
+      } else if (event === 'SIGNED_OUT') {
+        console.log('👋 Limpiando usuario por SIGNED_OUT');
+        this.currentUser = null;
+      } else if (event === 'INITIAL_SESSION' && session) {
+        console.log('⚡ Sesión inicial detectada, dejando que Auth.init() maneje');
+        // No cargar perfil aquí, Auth.init() ya lo hace
       }
+      
+      callback(event, session, this.currentUser);
     });
   }
 };
