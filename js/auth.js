@@ -195,21 +195,29 @@ const Auth = {
     try {
       console.log('🔵 Cerrando sesión...');
       
-      // 1. Limpiar localStorage
+      // 1. Limpiar localStorage PRIMERO (esto siempre funciona)
       this.clearStorage();
       
       // 2. Limpiar currentUser
       this.currentUser = null;
       
-      // 3. Cerrar sesión en Supabase
-      const { error } = await supabaseClient.auth.signOut();
-      if (error) throw error;
+      // 3. Intentar cerrar sesión en Supabase (puede fallar si no hay sesión)
+      try {
+        const { error } = await supabaseClient.auth.signOut();
+        if (error && error.message !== 'Auth session missing!') {
+          console.warn('⚠️ Error cerrando sesión en Supabase:', error.message);
+        } else {
+          console.log('✅ Sesión Supabase cerrada');
+        }
+      } catch (supabaseError) {
+        console.warn('⚠️ No se pudo cerrar sesión en Supabase (probablemente ya estaba cerrada)');
+      }
 
       console.log('✅ Sesión cerrada completamente');
       return true;
     } catch (error) {
-      console.error('❌ Error logging out:', error);
-      // Aunque falle Supabase, limpiamos local
+      console.error('❌ Error en logout:', error);
+      // Aunque falle, aseguramos que local está limpio
       this.clearStorage();
       this.currentUser = null;
       return true;
