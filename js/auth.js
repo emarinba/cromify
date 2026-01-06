@@ -1,10 +1,11 @@
 /**
- * auth.js - Versión SIMPLE que funciona
- * Sin timeout, sin complejidad - Solo protección contra doble carga
+ * auth.js - Con localStorage para mantener sesión
+ * Una vez logueado, no vuelve a preguntar hasta logout
  */
 
 const Auth = {
   currentUser: null,
+  STORAGE_KEY: 'cromify_user',
 
   /**
    * Inicializar autenticación
@@ -12,12 +13,33 @@ const Auth = {
   async init() {
     try {
       console.log('🔵 Inicializando Auth...');
+      
+      // 1. PRIMERO: Intentar cargar desde localStorage
+      const storedUser = this.loadFromStorage();
+      if (storedUser) {
+        console.log('✅ Usuario recuperado de localStorage:', storedUser.email);
+        this.currentUser = storedUser;
+        return true;
+      }
+      
+      // 2. Si no hay en storage, intentar desde Supabase
       const { data: { session } } = await supabaseClient.auth.getSession();
       
       if (session) {
-        console.log('✅ Sesión encontrada, cargando perfil...');
-        await this.loadUserProfile(session.user.id);
-        console.log('✅ Auth inicializado correctamente');
+        console.log('✅ Sesión encontrada en Supabase:', session.user.email);
+        
+        // Crear usuario básico desde la sesión
+        const user = {
+          id: session.user.id,
+          email: session.user.email,
+          name: session.user.user_metadata?.name || session.user.email.split('@')[0],
+          role: session.user.email === 'marinbalaguer@gmail.com' ? 'admin' : 'user'
+        };
+        
+        this.currentUser = user;
+        this.saveToStorage(user);
+        
+        console.log('✅ Usuario guardado en localStorage');
         return true;
       }
       
@@ -30,40 +52,44 @@ const Auth = {
   },
 
   /**
-   * Cargar perfil de usuario - CON PROTECCIÓN CONTRA DOBLE CARGA
+   * Guardar usuario en localStorage
    */
-  async loadUserProfile(userId) {
+  saveToStorage(user) {
     try {
-      console.log('🔵 Cargando perfil de usuario:', userId);
-      
-      // ✅ CLAVE: Si ya está cargado, usar caché
-      if (this.currentUser && this.currentUser.id === userId) {
-        console.log('⚡ Perfil ya cargado, usando caché');
-        return this.currentUser;
-      }
-      
-      const { data, error } = await supabaseClient
-        .from('users')
-        .select('*')
-        .eq('id', userId)
-        .single();
-
-      if (error) {
-        console.error('❌ Error en consulta:', error);
-        throw error;
-      }
-      
-      if (!data) {
-        console.error('❌ No se encontró el usuario');
-        throw new Error('Usuario no encontrado en la base de datos');
-      }
-
-      console.log('✅ Perfil cargado:', data.email, 'Role:', data.role);
-      this.currentUser = data;
-      return data;
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(user));
+      console.log('💾 Usuario guardado en localStorage');
     } catch (error) {
-      console.error('❌ Error loading user profile:', error);
-      throw error;
+      console.error('❌ Error guardando en localStorage:', error);
+    }
+  },
+
+  /**
+   * Cargar usuario desde localStorage
+   */
+  loadFromStorage() {
+    try {
+      const stored = localStorage.getItem(this.STORAGE_KEY);
+      if (stored) {
+        const user = JSON.parse(stored);
+        console.log('📦 Usuario cargado desde localStorage:', user.email);
+        return user;
+      }
+      return null;
+    } catch (error) {
+      console.error('❌ Error cargando desde localStorage:', error);
+      return null;
+    }
+  },
+
+  /**
+   * Limpiar localStorage
+   */
+  clearStorage() {
+    try {
+      localStorage.removeItem(this.STORAGE_KEY);
+      console.log('🗑️ localStorage limpiado');
+    } catch (error) {
+      console.error('❌ Error limpiando localStorage:', error);
     }
   },
 
@@ -84,7 +110,19 @@ const Auth = {
 
       if (error) throw error;
 
-      console.log('✅ Usuario registrado:', data);
+      console.log('✅ Usuario registrado');
+      
+      // Guardar en localStorage inmediatamente
+      const user = {
+        id: data.user.id,
+        email: data.user.email,
+        name: name,
+        role: 'user'
+      };
+      
+      this.currentUser = user;
+      this.saveToStorage(user);
+      
       return data;
     } catch (error) {
       console.error('❌ Error registrando:', error);
@@ -106,10 +144,18 @@ const Auth = {
 
       if (error) throw error;
 
-      console.log('✅ Sesión iniciada:', data.user.id);
+      console.log('✅ Sesión iniciada');
       
-      // Cargar perfil inmediatamente
-      await this.loadUserProfile(data.user.id);
+      // Guardar en localStorage
+      const user = {
+        id: data.user.id,
+        email: data.user.email,
+        name: data.user.user_metadata?.name || email.split('@')[0],
+        role: email === 'marinbalaguer@gmail.com' ? 'admin' : 'user'
+      };
+      
+      this.currentUser = user;
+      this.saveToStorage(user);
       
       return data;
     } catch (error) {
@@ -149,15 +195,24 @@ const Auth = {
     try {
       console.log('🔵 Cerrando sesión...');
       
+      // 1. Limpiar localStorage
+      this.clearStorage();
+      
+      // 2. Limpiar currentUser
+      this.currentUser = null;
+      
+      // 3. Cerrar sesión en Supabase
       const { error } = await supabaseClient.auth.signOut();
       if (error) throw error;
 
-      this.currentUser = null;
-      console.log('✅ Sesión cerrada');
+      console.log('✅ Sesión cerrada completamente');
       return true;
     } catch (error) {
       console.error('❌ Error logging out:', error);
-      throw error;
+      // Aunque falle Supabase, limpiamos local
+      this.clearStorage();
+      this.currentUser = null;
+      return true;
     }
   },
 
@@ -177,31 +232,58 @@ const Auth = {
 
   /**
    * Escuchar cambios de autenticación
-   * ✅ CLAVE: Solo cargar si NO está ya cargado
    */
   onAuthStateChange(callback) {
     return supabaseClient.auth.onAuthStateChange(async (event, session) => {
       console.log('🔵 Auth event:', event, session?.user?.email || 'no session');
       
-      if (event === 'SIGNED_IN' && session && !this.currentUser) {
-        // ✅ Solo cargar si NO está cargado
-        console.log('⚡ Cargando perfil por SIGNED_IN...');
-        try {
-          // Esperar un poco para que el trigger cree el usuario
-          await new Promise(resolve => setTimeout(resolve, 500));
-          await this.loadUserProfile(session.user.id);
-        } catch (error) {
-          console.error('❌ Error cargando perfil en SIGNED_IN:', error);
+      if (event === 'SIGNED_IN' && session) {
+        console.log('⚡ SIGNED_IN detectado');
+        
+        // Si ya tenemos usuario en memoria, no hacer nada
+        if (this.currentUser) {
+          console.log('⚡ Usuario ya en memoria, saltando');
+          callback(event, session, this.currentUser);
+          return;
         }
+        
+        // Si no está en memoria, cargar de localStorage
+        const storedUser = this.loadFromStorage();
+        if (storedUser) {
+          console.log('⚡ Usuario cargado de localStorage');
+          this.currentUser = storedUser;
+          callback(event, session, this.currentUser);
+          return;
+        }
+        
+        // Si no está en localStorage, crear desde sesión
+        console.log('⚡ Creando usuario desde sesión');
+        const user = {
+          id: session.user.id,
+          email: session.user.email,
+          name: session.user.user_metadata?.name || session.user.email.split('@')[0],
+          role: session.user.email === 'marinbalaguer@gmail.com' ? 'admin' : 'user'
+        };
+        
+        this.currentUser = user;
+        this.saveToStorage(user);
+        
+        callback(event, session, this.currentUser);
+        
       } else if (event === 'SIGNED_OUT') {
-        console.log('👋 Limpiando usuario por SIGNED_OUT');
+        console.log('👋 SIGNED_OUT detectado');
+        this.clearStorage();
         this.currentUser = null;
+        callback(event, null, null);
+        
       } else if (event === 'INITIAL_SESSION' && session) {
-        console.log('⚡ Sesión inicial detectada, dejando que Auth.init() maneje');
-        // No cargar perfil aquí, Auth.init() ya lo hace
+        console.log('⚡ INITIAL_SESSION detectado');
+        // No hacer nada, Auth.init() ya lo manejó
+        callback(event, session, this.currentUser);
+        
+      } else {
+        callback(event, session, this.currentUser);
       }
-      
-      callback(event, session, this.currentUser);
     });
   }
 };
