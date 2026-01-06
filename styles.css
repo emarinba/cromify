@@ -4128,3 +4128,303 @@ body.dark-mode .stat-icon {
   background: color-mix(in srgb, var(--album-color, var(--accent)) 20%, transparent) !important;
   border-color: color-mix(in srgb, var(--album-color, var(--accent)) 40%, transparent);
 }
+/* ============================================================================
+   CORRECCIÓN: Márgenes laterales y colores de álbum
+   ============================================================================ */
+
+/* ---------------------------------------------------------------------------
+   1. MÁRGENES LATERALES PARA TODAS LAS VISTAS
+   --------------------------------------------------------------------------- */
+
+/* Contenedor principal de app con márgenes */
+#app {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+@media (min-width: 1024px) {
+  #app {
+    padding: 0 48px;
+  }
+}
+
+@media (min-width: 1440px) {
+  #app {
+    padding: 0 64px;
+  }
+}
+
+/* Vistas específicas con padding interno adicional */
+#viewCollection,
+#adminAlbumsView,
+#adminCardsView,
+#adminCategoriesView,
+#userDashboard {
+  padding: 32px 0;
+}
+
+/* Collection view con buenos márgenes */
+#collectionView {
+  padding: 32px 0 !important;
+}
+
+.collection-header {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+/* Grid de cromos respetando márgenes */
+.cards-album-grid {
+  padding: 24px 0 !important;
+}
+
+/* Admin grids */
+.admin-albums-grid,
+.admin-cards-grid,
+.categories-grid {
+  padding: 24px 0;
+}
+
+/* ---------------------------------------------------------------------------
+   2. ÁLBUMES CON SU COLOR (NO NARANJA POR DEFECTO)
+   --------------------------------------------------------------------------- */
+
+/* Álbum card - usar su propio color */
+.album-card,
+.collection-card {
+  --album-color: var(--accent); /* Fallback si no hay color */
+}
+
+/* Restablecer el color por defecto a accent (no naranja fijo) */
+:root {
+  --album-color: var(--accent);
+}
+
+/* Header de álbum card - usar el color del álbum */
+.collection-card .collection-header {
+  background: var(--album-color) !important;
+  opacity: 0.9;
+}
+
+/* Admin album cards con su color */
+.admin-album-card {
+  border-left: 4px solid var(--album-color);
+}
+
+.admin-album-card::before {
+  background: var(--album-color);
+}
+
+/* ---------------------------------------------------------------------------
+   3. HEADER DE COLECCIÓN MEJORADO CON COLOR DEL ÁLBUM
+   --------------------------------------------------------------------------- */
+
+.collection-header {
+  position: relative;
+  padding: 32px 24px !important;
+  margin-bottom: 32px !important;
+  background: var(--bg-card) !important;
+  border-radius: 16px !important;
+  box-shadow: var(--shadow-lg) !important;
+  overflow: hidden;
+}
+
+/* Barra superior decorativa con el color del álbum */
+.collection-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, 
+    var(--album-color),
+    color-mix(in srgb, var(--album-color) 60%, white)
+  );
+  box-shadow: 0 2px 12px color-mix(in srgb, var(--album-color) 30%, transparent);
+}
+
+/* Acento lateral con el color */
+.collection-header::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(180deg, 
+    var(--album-color),
+    transparent
+  );
+  opacity: 0.7;
+}
+
+/* Título con mejor presentación */
+#collectionTitle {
+  font-size: 1.75rem !important;
+  font-weight: 700 !important;
+  color: var(--text) !important;
+  margin-bottom: 8px !important;
+  padding-left: 16px !important;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Indicador del color del álbum */
+#collectionTitle::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--album-color);
+  box-shadow: 0 0 12px var(--album-color);
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.3);
+  }
+}
+
+/* Línea decorativa bajo el título */
+#collectionTitle::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 16px;
+  width: 50px;
+  height: 2px;
+  background: linear-gradient(90deg, 
+    var(--album-color),
+    transparent
+  );
+  border-radius: 2px;
+}
+
+/* ---------------------------------------------------------------------------
+   4. STATS CON ACENTOS DEL COLOR
+   --------------------------------------------------------------------------- */
+
+.stats-grid {
+  padding: 24px 0 !important;
+  gap: 20px !important;
+  margin-bottom: 32px !important;
+}
+
+.stat-card {
+  position: relative;
+  overflow: visible;
+}
+
+/* Acento sutil con el color del álbum */
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3px;
+  height: 100%;
+  background: linear-gradient(180deg,
+    var(--album-color),
+    transparent
+  );
+  opacity: 0.5;
+  transition: all 0.3s ease;
+}
+
+.stat-card:hover::before {
+  width: 4px;
+  opacity: 0.8;
+}
+
+/* Iconos con toque del color */
+.stat-icon {
+  background: color-mix(in srgb, var(--album-color) 10%, var(--bg-card)) !important;
+  border: 1px solid color-mix(in srgb, var(--album-color) 20%, transparent);
+}
+
+/* ---------------------------------------------------------------------------
+   5. BARRA DE PROGRESO CON COLOR DEL ÁLBUM
+   --------------------------------------------------------------------------- */
+
+.progress-bar-fill {
+  background: linear-gradient(90deg, 
+    var(--album-color),
+    color-mix(in srgb, var(--album-color) 70%, white)
+  ) !important;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--album-color) 30%, transparent) !important;
+}
+
+.stat-progress .stat-value {
+  color: var(--album-color) !important;
+}
+
+.progress-text .current {
+  color: var(--album-color) !important;
+}
+
+/* ---------------------------------------------------------------------------
+   6. RESPONSIVE
+   --------------------------------------------------------------------------- */
+
+@media (max-width: 768px) {
+  #app {
+    padding: 0 16px;
+  }
+  
+  #viewCollection,
+  #adminAlbumsView,
+  #adminCardsView {
+    padding: 20px 0;
+  }
+  
+  .collection-header {
+    padding: 24px 16px !important;
+    margin-bottom: 24px !important;
+  }
+  
+  #collectionTitle {
+    font-size: 1.5rem !important;
+    padding-left: 12px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  #app {
+    padding: 0 12px;
+  }
+  
+  .collection-header {
+    padding: 20px 12px !important;
+  }
+  
+  #collectionTitle {
+    font-size: 1.25rem !important;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   7. DARK MODE
+   --------------------------------------------------------------------------- */
+
+body.dark-mode .collection-header::before {
+  box-shadow: 0 2px 16px color-mix(in srgb, var(--album-color) 50%, transparent);
+}
+
+body.dark-mode .stat-icon {
+  background: color-mix(in srgb, var(--album-color) 15%, var(--bg-secondary)) !important;
+  border-color: color-mix(in srgb, var(--album-color) 30%, transparent);
+}
+
+body.dark-mode #collectionTitle::before {
+  box-shadow: 0 0 16px var(--album-color);
+}
