@@ -245,6 +245,10 @@ const UserUI = {
       this.currentCards = cards;
       this.currentCategories = categories;
       
+      // Setear el color del álbum para los efectos CSS
+      const albumColor = collection.album.color || '#ED8936';
+      document.documentElement.style.setProperty('--album-color', albumColor);
+      
       // Mostrar vista
       Utils.showView('viewCollection');
       
