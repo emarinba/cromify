@@ -3741,3 +3741,390 @@ body:not(.dark-mode) textarea {
   color: var(--text) !important;
   opacity: 1 !important;
 }
+/* ============================================================================
+   CORRECCIONES FINALES - AGREGAR AL FINAL DEL CSS
+   ============================================================================ */
+
+/* ---------------------------------------------------------------------------
+   1. CROMOS NÍTIDOS - SIN TRANSPARENCIA
+   --------------------------------------------------------------------------- */
+.card-item,
+.card-item *,
+.card-item img {
+  opacity: 1 !important;
+  filter: none !important;
+}
+
+.card-item .card-number,
+.card-item .card-name,
+.card-item .card-team {
+  opacity: 1 !important;
+  color: var(--text) !important;
+}
+
+/* Solo los que faltan tienen opacidad */
+.card-item.falta {
+  opacity: 0.4 !important;
+}
+
+.card-item.falta img {
+  opacity: 1 !important;
+  filter: grayscale(60%);
+}
+
+body.dark-mode .card-item.falta {
+  opacity: 0.5 !important;
+}
+
+/* ---------------------------------------------------------------------------
+   2. MÁRGENES Y ESPACIADO
+   --------------------------------------------------------------------------- */
+
+/* Contenedor principal con márgenes */
+#collectionView {
+  padding: 32px 24px !important;
+}
+
+/* Header con mejor espaciado */
+.collection-header {
+  padding: 24px !important;
+  margin-bottom: 32px !important;
+}
+
+/* Grid de cromos con márgenes */
+.cards-album-grid {
+  padding: 24px !important;
+  gap: 24px !important;
+}
+
+/* Cards individuales con aire */
+.card-item {
+  margin: 0 !important;
+  padding: 12px !important;
+}
+
+/* Stats con mejor espaciado */
+.stats-grid {
+  padding: 24px !important;
+  gap: 20px !important;
+  margin-bottom: 32px !important;
+}
+
+/* ---------------------------------------------------------------------------
+   3. STAT-PROGRESS MEJORADO CON BARRA
+   --------------------------------------------------------------------------- */
+
+.stat-card.stat-progress {
+  min-height: 120px !important;
+  padding: 24px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 16px !important;
+}
+
+.stat-progress .stat-info {
+  flex-direction: row !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+
+.stat-progress .stat-label {
+  font-size: 0.875rem !important;
+  margin-bottom: 0 !important;
+}
+
+.stat-progress .stat-value {
+  font-size: 2.5rem !important;
+  color: var(--accent) !important;
+}
+
+/* Barra de progreso */
+.progress-bar-container {
+  width: 100%;
+  height: 12px;
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent-light));
+  border-radius: 12px;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  box-shadow: 0 2px 8px rgba(237, 137, 54, 0.4);
+}
+
+.progress-bar-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, 
+    transparent, 
+    rgba(255,255,255,0.3), 
+    transparent
+  );
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* Texto de porcentaje sobre la barra */
+.progress-text {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.progress-text .current {
+  color: var(--accent);
+}
+
+/* ---------------------------------------------------------------------------
+   4. EFECTOS CON COLOR DEL ÁLBUM
+   --------------------------------------------------------------------------- */
+
+/* Header de colección con color del álbum */
+.collection-header {
+  position: relative;
+  border-radius: 16px !important;
+  background: var(--bg-card) !important;
+  box-shadow: var(--shadow-md) !important;
+  overflow: hidden;
+}
+
+/* Barra superior con color del álbum */
+.collection-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  background: linear-gradient(90deg, 
+    var(--album-color, var(--accent)), 
+    color-mix(in srgb, var(--album-color, var(--accent)) 80%, white)
+  );
+  box-shadow: 0 2px 8px var(--album-color, var(--accent));
+}
+
+/* Barra lateral con color del álbum */
+.collection-header::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  background: linear-gradient(180deg, 
+    var(--album-color, var(--accent)),
+    transparent
+  );
+  opacity: 0.6;
+}
+
+/* Título del álbum con efecto de color */
+#collectionTitle {
+  position: relative;
+  padding-left: 20px !important;
+  color: var(--text) !important;
+  font-weight: 700 !important;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+#collectionTitle::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--album-color, var(--accent));
+  box-shadow: 0 0 12px var(--album-color, var(--accent)),
+              0 0 24px var(--album-color, var(--accent));
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.2);
+  }
+}
+
+/* Línea decorativa bajo el título */
+.collection-header h2 {
+  position: relative;
+}
+
+.collection-header h2::after {
+  content: '';
+  position: absolute;
+  bottom: -12px;
+  left: 0;
+  width: 60px;
+  height: 3px;
+  background: linear-gradient(90deg, 
+    var(--album-color, var(--accent)),
+    transparent
+  );
+  border-radius: 3px;
+}
+
+/* Stats con color del álbum */
+.stat-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: var(--album-color, var(--accent));
+  opacity: 0.6;
+}
+
+.stat-card:hover::before {
+  width: 6px;
+  opacity: 1;
+}
+
+/* Iconos de stats con color del álbum */
+.stat-icon {
+  background: color-mix(in srgb, var(--album-color, var(--accent)) 15%, transparent) !important;
+  border: 2px solid color-mix(in srgb, var(--album-color, var(--accent)) 30%, transparent);
+}
+
+.stat-icon i,
+.stat-icon svg {
+  color: var(--album-color, var(--accent)) !important;
+}
+
+/* Barra de progreso con color del álbum */
+.progress-bar-fill {
+  background: linear-gradient(90deg, 
+    var(--album-color, var(--accent)),
+    color-mix(in srgb, var(--album-color, var(--accent)) 70%, white)
+  ) !important;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--album-color, var(--accent)) 40%, transparent) !important;
+}
+
+.progress-text .current {
+  color: var(--album-color, var(--accent)) !important;
+}
+
+/* ---------------------------------------------------------------------------
+   5. ANIMACIONES Y TRANSICIONES SUAVES
+   --------------------------------------------------------------------------- */
+
+.collection-header {
+  animation: slideDown 0.4s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.stat-card {
+  animation: fadeInUp 0.4s ease-out backwards;
+}
+
+.stat-card:nth-child(1) { animation-delay: 0.05s; }
+.stat-card:nth-child(2) { animation-delay: 0.1s; }
+.stat-card:nth-child(3) { animation-delay: 0.15s; }
+.stat-card:nth-child(4) { animation-delay: 0.2s; }
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.card-item {
+  animation: fadeIn 0.3s ease-out backwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ---------------------------------------------------------------------------
+   6. RESPONSIVE
+   --------------------------------------------------------------------------- */
+
+@media (max-width: 768px) {
+  #collectionView {
+    padding: 20px 16px !important;
+  }
+  
+  .collection-header {
+    padding: 20px !important;
+    margin-bottom: 24px !important;
+  }
+  
+  .cards-album-grid {
+    padding: 16px !important;
+    gap: 16px !important;
+  }
+  
+  .stat-card.stat-progress {
+    min-height: 100px !important;
+    padding: 20px !important;
+  }
+  
+  .stat-progress .stat-value {
+    font-size: 2rem !important;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   7. DARK MODE
+   --------------------------------------------------------------------------- */
+
+body.dark-mode .progress-bar-container {
+  background: var(--bg-secondary);
+}
+
+body.dark-mode .collection-header::before {
+  box-shadow: 0 2px 12px var(--album-color, var(--accent));
+}
+
+body.dark-mode .stat-icon {
+  background: color-mix(in srgb, var(--album-color, var(--accent)) 20%, transparent) !important;
+  border-color: color-mix(in srgb, var(--album-color, var(--accent)) 40%, transparent);
+}

@@ -282,8 +282,12 @@ const UI = {
             <span class="stat-label">Progreso</span>
             <span class="stat-value">${stats.completion_percentage || 0}%</span>
           </div>
-          <div class="progress-bar">
-            <div class="progress-fill" style="width: ${stats.completion_percentage || 0}%"></div>
+          <div class="progress-bar-container">
+            <div class="progress-bar-fill" style="width: ${stats.completion_percentage || 0}%"></div>
+          </div>
+          <div class="progress-text">
+            <span class="current">${stats.cards_owned || 0} cromos</span>
+            <span class="total">de ${stats.total_cards || 0}</span>
           </div>
         </div>
       </div>
