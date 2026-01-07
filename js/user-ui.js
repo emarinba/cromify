@@ -263,9 +263,8 @@ const UserUI = {
           await this.updateCardDuplicates(cardId, count);
         }
       });
-    }
-  
-    this.setupCardListenersDelegation();
+
+      this.setupCollectionListeners();
       
     } catch (error) {
       console.error('Error opening collection:', error);
