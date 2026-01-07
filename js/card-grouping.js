@@ -1,17 +1,22 @@
 /**
  * card-grouping.js - Sistema de agrupación de cromos
- * Lógica compartida entre usuario y admin
+ * Con delegación de eventos robusta y contadores
  */
 
 const CardGrouping = {
   // Estado de grupos expandidos (por sesión)
   expandedGroups: new Set(),
   
+  // Contenedor actual (para delegación)
+  currentContainer: null,
+  
+  // Callback de toggle (para re-render)
+  onToggleCallback: null,
+
   /**
    * Inicializar estado de agrupaciones
    */
   init() {
-    // NO cargar estado de localStorage
     // SIEMPRE empezar con todos expandidos
     this.expandedGroups = new Set();
     console.log('🔵 CardGrouping inicializado: Todos los grupos expandidos por defecto');
@@ -21,7 +26,6 @@ const CardGrouping = {
    * Guardar estado de grupos
    */
   saveState() {
-    // Guardar en localStorage para persistencia de sesión
     try {
       localStorage.setItem('cromify_expanded_groups', 
         JSON.stringify([...this.expandedGroups])
@@ -38,15 +42,15 @@ const CardGrouping = {
    * 
    * @param {Array} cards - Array de cromos
    * @param {Array} categories - Array de categorías
-   * @returns {Array} Array de grupos {key, name, cards, type, color}
+   * @returns {Array} Array de grupos {key, name, cards, type, color, stats}
    */
   groupCards(cards, categories) {
     if (!cards || cards.length === 0) return [];
 
-    // Mapa de categorías por ID para acceso rápido
+    // Mapa de categorías por ID
     const categoryMap = new Map(categories.map(cat => [cat.id, cat]));
     
-    // Identificar categoría "Básica" (case insensitive)
+    // Identificar categoría "Básica"
     const basicCategory = categories.find(cat => 
       cat.name.toLowerCase() === 'básica' || 
       cat.name.toLowerCase() === 'basica'
@@ -65,7 +69,7 @@ const CardGrouping = {
         groupKey = `team_${card.team || 'sin_equipo'}`;
         groupName = card.team || 'Sin equipo';
         groupType = 'team';
-        groupColor = '#718096'; // Color neutro para equipos
+        groupColor = '#718096';
       } else {
         // Otras categorías: agrupar por categoría
         groupKey = `category_${card.categoryId || 'sin_categoria'}`;
@@ -93,18 +97,19 @@ const CardGrouping = {
     // Convertir a array y ordenar
     let groupsArray = Array.from(groups.values());
 
-    // Ordenar grupos:
-    // 1. Básica primero (equipos)
-    // 2. Luego otras categorías por nombre
+    // Ordenar grupos
     groupsArray.sort((a, b) => {
       if (a.type === 'team' && b.type !== 'team') return -1;
       if (a.type !== 'team' && b.type === 'team') return 1;
       return a.name.localeCompare(b.name);
     });
 
-    // Ordenar cromos dentro de cada grupo
+    // Ordenar cromos dentro de cada grupo y calcular estadísticas
     groupsArray.forEach(group => {
       group.cards = Utils.sortCards(group.cards);
+      
+      // Calcular estadísticas del grupo
+      group.stats = this.calculateGroupStats(group.cards);
     });
 
     // TODOS LOS GRUPOS EXPANDIDOS POR DEFECTO
@@ -114,6 +119,26 @@ const CardGrouping = {
     this.saveState();
 
     return groupsArray;
+  },
+
+  /**
+   * Calcular estadísticas de un grupo
+   * @param {Array} cards - Cromos del grupo
+   * @returns {Object} {total, owned, missing, traded}
+   */
+  calculateGroupStats(cards) {
+    const total = cards.length;
+    const owned = cards.filter(c => c.status === 'tengo').length;
+    const missing = cards.filter(c => c.status === 'falta').length;
+    const traded = cards.filter(c => c.status === 'cambiado').length;
+    
+    return {
+      total,
+      owned,
+      missing,
+      traded,
+      percentage: total > 0 ? Math.round((owned / total) * 100) : 0
+    };
   },
 
   /**
@@ -131,9 +156,9 @@ const CardGrouping = {
   /**
    * Expandir todos los grupos
    */
-  expandAll(groups) {
-    groups.forEach(group => {
-      this.expandedGroups.add(group.key);
+  expandAll(groupKeys) {
+    groupKeys.forEach(key => {
+      this.expandedGroups.add(key);
     });
     this.saveState();
   },
@@ -155,9 +180,6 @@ const CardGrouping = {
 
   /**
    * Renderizar HTML de grupos (vista álbum)
-   * @param {Array} groups - Array de grupos
-   * @param {Function} cardRenderer - Función para renderizar cada cromo
-   * @returns {String} HTML
    */
   renderGroupedAlbumView(groups, cardRenderer) {
     if (groups.length === 0) {
@@ -171,11 +193,11 @@ const CardGrouping = {
 
     return `
       <div class="groups-controls">
-        <button class="btn-text" id="expandAllGroups">
+        <button class="btn-text btn-expand-all">
           <i data-lucide="chevrons-down"></i>
           Expandir todos
         </button>
-        <button class="btn-text" id="collapseAllGroups">
+        <button class="btn-text btn-collapse-all">
           <i data-lucide="chevrons-up"></i>
           Colapsar todos
         </button>
@@ -202,11 +224,11 @@ const CardGrouping = {
 
     return `
       <div class="groups-controls">
-        <button class="btn-text" id="expandAllGroups">
+        <button class="btn-text btn-expand-all">
           <i data-lucide="chevrons-down"></i>
           Expandir todos
         </button>
-        <button class="btn-text" id="collapseAllGroups">
+        <button class="btn-text btn-collapse-all">
           <i data-lucide="chevrons-up"></i>
           Colapsar todos
         </button>
@@ -224,6 +246,7 @@ const CardGrouping = {
   renderGroup(group, cardRenderer, viewMode) {
     const isExpanded = this.isExpanded(group.key);
     const chevronIcon = isExpanded ? 'chevron-down' : 'chevron-right';
+    const stats = group.stats;
 
     return `
       <div class="card-group ${isExpanded ? 'expanded' : 'collapsed'}" 
@@ -234,7 +257,12 @@ const CardGrouping = {
             <i data-lucide="${chevronIcon}" class="group-chevron"></i>
             <div class="group-indicator" style="background-color: ${group.color};"></div>
             <h3 class="group-title">${Utils.escapeHtml(group.name)}</h3>
-            <span class="group-count">${group.cards.length} cromos</span>
+            <div class="group-stats">
+              <span class="group-progress">
+                <strong>${stats.owned}</strong> / ${stats.total}
+              </span>
+              <span class="group-percentage">${stats.percentage}%</span>
+            </div>
           </div>
         </div>
 
@@ -271,39 +299,59 @@ const CardGrouping = {
   },
 
   /**
-   * Setup event listeners para grupos
+   * Setup event listeners para grupos (DELEGACIÓN)
+   * Se llama UNA SOLA VEZ al inicio
    */
   setupGroupListeners(container, onToggle) {
-    // Toggle individual de grupos
-    container.addEventListener('click', (e) => {
+    // Guardar referencias
+    this.currentContainer = container;
+    this.onToggleCallback = onToggle;
+
+    // IMPORTANTE: Limpiar listeners anteriores
+    const newContainer = container.cloneNode(true);
+    container.parentNode.replaceChild(newContainer, container);
+    this.currentContainer = newContainer;
+
+    // DELEGACIÓN: Un solo listener en el contenedor
+    this.currentContainer.addEventListener('click', (e) => {
+      // Toggle individual de grupos
       const header = e.target.closest('.group-header');
       if (header) {
+        e.stopPropagation();
         const groupKey = header.dataset.groupKey;
         this.toggleGroup(groupKey);
-        if (onToggle) onToggle();
+        if (this.onToggleCallback) {
+          this.onToggleCallback();
+        }
+        return;
+      }
+
+      // Expandir todos
+      const expandBtn = e.target.closest('.btn-expand-all');
+      if (expandBtn) {
+        e.stopPropagation();
+        const groups = this.currentContainer.querySelectorAll('.card-group');
+        const groupKeys = Array.from(groups).map(g => g.dataset.groupKey);
+        this.expandAll(groupKeys);
+        if (this.onToggleCallback) {
+          this.onToggleCallback();
+        }
+        return;
+      }
+
+      // Colapsar todos
+      const collapseBtn = e.target.closest('.btn-collapse-all');
+      if (collapseBtn) {
+        e.stopPropagation();
+        this.collapseAll();
+        if (this.onToggleCallback) {
+          this.onToggleCallback();
+        }
+        return;
       }
     });
 
-    // Expandir todos
-    const expandBtn = document.getElementById('expandAllGroups');
-    if (expandBtn) {
-      expandBtn.addEventListener('click', () => {
-        const groups = container.querySelectorAll('.card-group');
-        const groupKeys = Array.from(groups).map(g => g.dataset.groupKey);
-        groupKeys.forEach(key => this.expandedGroups.add(key));
-        this.saveState();
-        if (onToggle) onToggle();
-      });
-    }
-
-    // Colapsar todos
-    const collapseBtn = document.getElementById('collapseAllGroups');
-    if (collapseBtn) {
-      collapseBtn.addEventListener('click', () => {
-        this.collapseAll();
-        if (onToggle) onToggle();
-      });
-    }
+    console.log('✅ Group listeners configurados con delegación');
   }
 };
 

@@ -4685,3 +4685,110 @@ body.dark-mode .group-count {
 body.dark-mode .card-group.expanded .group-count {
   background: color-mix(in srgb, var(--album-color) 20%, var(--bg-secondary));
 }
+/* ============================================================================
+   AGRUPACIONES - CSS ACTUALIZADO con contadores
+   ============================================================================ */
+
+/* Contenedor de stats en el header */
+.group-stats {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+}
+
+/* Contador principal: X / Y */
+.group-progress {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+
+.group-progress strong {
+  color: var(--album-color);
+  font-size: 1rem;
+}
+
+/* Porcentaje */
+.group-percentage {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  padding: 6px 12px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius);
+  min-width: 50px;
+  text-align: center;
+}
+
+/* Cuando el grupo está expandido */
+.card-group.expanded .group-progress {
+  background: color-mix(in srgb, var(--album-color) 10%, var(--bg-card));
+  border-color: color-mix(in srgb, var(--album-color) 30%, transparent);
+}
+
+.card-group.expanded .group-percentage {
+  background: color-mix(in srgb, var(--album-color) 15%, var(--bg-card));
+  color: var(--album-color);
+}
+
+/* Eliminar el contador viejo */
+.group-count {
+  display: none;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .group-stats {
+    gap: 8px;
+  }
+
+  .group-progress {
+    font-size: 0.75rem;
+    padding: 4px 10px;
+  }
+
+  .group-progress strong {
+    font-size: 0.875rem;
+  }
+
+  .group-percentage {
+    font-size: 0.75rem;
+    padding: 4px 10px;
+    min-width: 45px;
+  }
+}
+
+@media (max-width: 480px) {
+  .group-header-content {
+    flex-wrap: wrap;
+  }
+
+  .group-stats {
+    width: 100%;
+    justify-content: flex-end;
+    margin-top: 8px;
+    margin-left: 0;
+  }
+}
+
+/* Dark mode */
+body.dark-mode .group-progress {
+  background: var(--bg-secondary);
+  border-color: var(--border);
+}
+
+body.dark-mode .card-group.expanded .group-progress {
+  background: color-mix(in srgb, var(--album-color) 15%, var(--bg-secondary));
+}
+
+body.dark-mode .card-group.expanded .group-percentage {
+  background: color-mix(in srgb, var(--album-color) 20%, var(--bg-secondary));
+}
