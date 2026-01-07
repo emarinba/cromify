@@ -1,19 +1,24 @@
 /**
- * card-groups.js - Sistema de agrupaciones DESDE CERO
- * Simple, funcional, sin complejidad innecesaria
+ * card-groups.js - CON LOGS DE DEBUG
  */
 
 const CardGroups = {
   expanded: new Set(),
 
-  /**
-   * Agrupar cromos
-   */
   group(cards, categories) {
-    if (!cards?.length) return [];
+    console.log('🔵 CardGroups.group() - Iniciando agrupación');
+    console.log('   Cards:', cards?.length);
+    console.log('   Categories:', categories?.length);
+    
+    if (!cards?.length) {
+      console.log('⚠️  Sin cards, retornando []');
+      return [];
+    }
 
     const catMap = new Map(categories.map(c => [c.id, c]));
     const basic = categories.find(c => c.name.toLowerCase().replace(/á/g, 'a') === 'basica');
+    console.log('   Categoría básica encontrada:', basic?.name);
+    
     const groups = new Map();
 
     cards.forEach(card => {
@@ -37,6 +42,8 @@ const CardGroups = {
     });
 
     const result = Array.from(groups.values());
+    console.log('   Grupos creados:', result.length);
+    result.forEach(g => console.log('      -', g.name, ':', g.cards.length, 'cromos'));
     
     result.sort((a, b) => {
       if (a.key.startsWith('team_') && !b.key.startsWith('team_')) return -1;
@@ -55,18 +62,21 @@ const CardGroups = {
       this.expanded.add(g.key);
     });
 
+    console.log('   Grupos expandidos:', Array.from(this.expanded));
+    console.log('✅ CardGroups.group() - Completado');
     return result;
   },
 
-  /**
-   * Renderizar grupos
-   */
   render(groups, cardRenderer) {
+    console.log('🔵 CardGroups.render() - Renderizando');
+    console.log('   Grupos a renderizar:', groups.length);
+    
     if (!groups.length) {
+      console.log('⚠️  Sin grupos, retornando empty state');
       return '<div class="empty-state"><i data-lucide="inbox"></i><p>Sin cromos</p></div>';
     }
 
-    return `
+    const html = `
       <div class="groups-toolbar">
         <button class="btn-ghost" data-groups-action="expand-all">
           <i data-lucide="chevrons-down"></i>
@@ -80,8 +90,9 @@ const CardGroups = {
       <div class="groups-list">
         ${groups.map(g => {
           const exp = this.expanded.has(g.key);
+          console.log('   Renderizando grupo:', g.name, '- Expandido:', exp);
           return `
-            <div class="group ${exp ? 'expanded' : 'collapsed'}">
+            <div class="group ${exp ? 'expanded' : 'collapsed'}" data-group-id="${g.key}">
               <button class="group-header" data-groups-action="toggle" data-key="${g.key}">
                 <i data-lucide="${exp ? 'chevron-down' : 'chevron-right'}" class="group-icon"></i>
                 <span class="group-dot" style="background:${g.color}"></span>
@@ -101,43 +112,94 @@ const CardGroups = {
         }).join('')}
       </div>
     `;
+    
+    console.log('✅ CardGroups.render() - HTML generado');
+    return html;
   },
 
-  /**
-   * Setup listeners - Se llama UNA VEZ
-   */
   listen(containerId, onUpdate) {
+    console.log('🔵 CardGroups.listen() - Configurando listeners');
+    console.log('   Container ID:', containerId);
+    
     const el = document.getElementById(containerId);
-    if (!el) return;
+    if (!el) {
+      console.error('❌ Contenedor NO encontrado:', containerId);
+      return;
+    }
+    
+    console.log('✅ Contenedor encontrado:', el);
 
     el.addEventListener('click', e => {
+      console.log('═══════════════════════════════════════');
+      console.log('🔴 CLICK DETECTADO');
+      console.log('   Target:', e.target);
+      console.log('   Target.tagName:', e.target.tagName);
+      console.log('   Target.className:', e.target.className);
+      
       const action = e.target.closest('[data-groups-action]');
-      if (!action) return;
+      console.log('   Closest [data-groups-action]:', action);
+      
+      if (!action) {
+        console.log('⚠️  NO es un elemento de grupos, ignorando');
+        console.log('═══════════════════════════════════════');
+        return;
+      }
 
       e.preventDefault();
+      console.log('✅ Elemento de grupos detectado');
+      
       const type = action.dataset.groupsAction;
+      console.log('   Action type:', type);
 
       if (type === 'toggle') {
         const key = action.dataset.key;
+        console.log('   🔵 TOGGLE GROUP');
+        console.log('      Key:', key);
+        console.log('      Estado actual:', this.expanded.has(key) ? 'EXPANDIDO' : 'COLAPSADO');
+        
         if (this.expanded.has(key)) {
+          console.log('      ➡️  Colapsando...');
           this.expanded.delete(key);
         } else {
+          console.log('      ➡️  Expandiendo...');
           this.expanded.add(key);
         }
+        
+        console.log('      Nuevo estado:', this.expanded.has(key) ? 'EXPANDIDO' : 'COLAPSADO');
+        console.log('      Grupos expandidos ahora:', Array.from(this.expanded));
+        console.log('      🔄 Llamando onUpdate()...');
+        
         onUpdate();
+        console.log('      ✅ onUpdate() completado');
       }
 
       if (type === 'expand-all') {
-        document.querySelectorAll('[data-key]').forEach(btn => {
-          this.expanded.add(btn.dataset.key);
+        console.log('   🔵 EXPAND ALL');
+        const buttons = document.querySelectorAll('[data-key]');
+        console.log('      Botones encontrados:', buttons.length);
+        buttons.forEach(btn => {
+          const k = btn.dataset.key;
+          console.log('         Expandiendo:', k);
+          this.expanded.add(k);
         });
+        console.log('      🔄 Llamando onUpdate()...');
         onUpdate();
+        console.log('      ✅ onUpdate() completado');
       }
 
       if (type === 'collapse-all') {
+        console.log('   🔵 COLLAPSE ALL');
+        console.log('      Grupos antes:', Array.from(this.expanded));
         this.expanded.clear();
+        console.log('      Grupos después:', Array.from(this.expanded));
+        console.log('      🔄 Llamando onUpdate()...');
         onUpdate();
+        console.log('      ✅ onUpdate() completado');
       }
+      
+      console.log('═══════════════════════════════════════');
     });
+    
+    console.log('✅ CardGroups.listen() - Listeners configurados');
   }
 };
