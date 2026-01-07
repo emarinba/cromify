@@ -16,6 +16,10 @@ const UserUI = {
   async showDashboard() {
     try {
       Utils.showLoader();
+      
+      // Resetear flag de listeners
+      CardGrouping.listenersInitialized = false;
+      
       Utils.showView('viewUserDashboard');
       
       const [stats, collections, albums] = await Promise.all([
@@ -238,6 +242,10 @@ const UserUI = {
       UI.renderStats(stats, '#collectionStats');
       this.renderFilters();
       this.renderCards();
+      
+      // Setup listeners UNA SOLA VEZ
+      CardGrouping.setupGroupListeners('#cardsContainer', () => this.renderCards());
+      
       this.setupCollectionListeners();
       
     } catch (error) {
@@ -346,8 +354,7 @@ const UserUI = {
       (card) => this.renderAlbumCard(card)
     );
 
-    // Setup listeners de grupos
-    CardGrouping.setupGroupListeners(container, () => this.renderCards());
+    // NO llamar setupGroupListeners aquí - ya está configurado
 
     if (typeof lucide !== 'undefined') lucide.createIcons();
   },
@@ -410,8 +417,7 @@ const UserUI = {
       (card) => this.renderListCard(card)
     );
 
-    // Setup listeners de grupos
-    CardGrouping.setupGroupListeners(container, () => this.renderCards());
+    // NO llamar setupGroupListeners aquí - ya está configurado
 
     if (typeof lucide !== 'undefined') lucide.createIcons();
   },
