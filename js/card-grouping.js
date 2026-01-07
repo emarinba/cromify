@@ -11,21 +11,17 @@ const CardGrouping = {
    * Inicializar estado de agrupaciones
    */
   init() {
-    // Cargar estado guardado de localStorage
-    const saved = localStorage.getItem('cromify_expanded_groups');
-    if (saved) {
-      try {
-        this.expandedGroups = new Set(JSON.parse(saved));
-      } catch (e) {
-        console.error('Error cargando estado de grupos:', e);
-      }
-    }
+    // NO cargar estado de localStorage
+    // SIEMPRE empezar con todos expandidos
+    this.expandedGroups = new Set();
+    console.log('🔵 CardGrouping inicializado: Todos los grupos expandidos por defecto');
   },
 
   /**
    * Guardar estado de grupos
    */
   saveState() {
+    // Guardar en localStorage para persistencia de sesión
     try {
       localStorage.setItem('cromify_expanded_groups', 
         JSON.stringify([...this.expandedGroups])
@@ -111,11 +107,11 @@ const CardGrouping = {
       group.cards = Utils.sortCards(group.cards);
     });
 
-    // Si no hay grupos expandidos, expandir el primero por defecto
-    if (this.expandedGroups.size === 0 && groupsArray.length > 0) {
-      this.expandedGroups.add(groupsArray[0].key);
-      this.saveState();
-    }
+    // TODOS LOS GRUPOS EXPANDIDOS POR DEFECTO
+    groupsArray.forEach(group => {
+      this.expandedGroups.add(group.key);
+    });
+    this.saveState();
 
     return groupsArray;
   },

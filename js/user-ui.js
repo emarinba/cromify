@@ -1,18 +1,14 @@
 /**
- * user-ui.js - Interfaz de Usuario Normal
- * Gestión de colecciones personales
+ * user-ui.js - Interfaz de Usuario (CON DELEGACIÓN DE EVENTOS)
+ * Sistema robusto que sobrevive a re-renders
  */
 
 const UserUI = {
   currentCollectionId: null,
   currentCards: [],
   currentCategories: [],
-  viewMode: 'album', // 'album' o 'list'
-  filters: {
-    search: '',
-    category: '',
-    status: ''
-  },
+  viewMode: 'album',
+  filters: { search: '', category: '', status: '' },
 
   /**
    * Mostrar dashboard de usuario
@@ -22,13 +18,16 @@ const UserUI = {
       Utils.showLoader();
       Utils.showView('viewUserDashboard');
       
-      const [albums, collections, stats] = await Promise.all([
-        API.getAlbums(),
+      const [stats, collections, albums] = await Promise.all([
+        API.getUserStats(),
         API.getUserCollections(),
-        API.getUserStats()
+        API.getAlbums()
       ]);
       
-      this.renderUserDashboard(albums, collections, stats);
+      this.renderUserStats(stats);
+      this.renderMyCollections(collections);
+      this.renderAvailableAlbums(albums, collections);
+      this.setupDashboardListeners();
       
     } catch (error) {
       console.error('Error loading user dashboard:', error);
@@ -39,59 +38,34 @@ const UserUI = {
   },
 
   /**
-   * Renderizar dashboard de usuario
+   * Renderizar estadísticas de usuario
    */
-  renderUserDashboard(albums, collections, stats) {
-    // Estadísticas generales
-    this.renderGeneralStats(stats);
-    
-    // Mis colecciones
-    this.renderMyCollections(collections);
-    
-    // Álbumes disponibles
-    this.renderAvailableAlbums(albums, collections);
-    
-    this.setupDashboardListeners();
-  },
+  renderUserStats(stats) {
+    const container = document.getElementById('userStatsContainer');
+    if (!container || !stats) return;
 
-  /**
-   * Renderizar estadísticas generales
-   */
-  renderGeneralStats(stats) {
-    const container = document.getElementById('userGeneralStats');
-    if (!container) return;
-
-    const totalCollections = stats.length;
-    const totalOwned = stats.reduce((sum, s) => sum + (s.cards_owned || 0), 0);
-    const totalCards = stats.reduce((sum, s) => sum + (s.total_cards || 0), 0);
-    const totalDuplicates = stats.reduce((sum, s) => sum + (s.total_duplicates || 0), 0);
-    const avgProgress = totalCollections > 0 
-      ? Math.round(stats.reduce((sum, s) => sum + (s.completion_percentage || 0), 0) / totalCollections)
+    const avgProgress = stats.total_collections > 0 
+      ? Math.round((stats.total_cards_owned / (stats.total_cards_available || 1)) * 100)
       : 0;
 
     container.innerHTML = `
-      <div class="stats-overview">
+      <div class="stats-dashboard">
         <div class="stat-box">
-          <i data-lucide="folder" class="stat-icon"></i>
+          <i data-lucide="book-open" class="stat-icon"></i>
           <div class="stat-content">
-            <span class="stat-value">${totalCollections}</span>
-            <span class="stat-label">Colecciones</span>
+            <span class="stat-value">${stats.total_collections || 0}</span>
+            <span class="stat-label">Álbumes</span>
           </div>
         </div>
+
         <div class="stat-box">
-          <i data-lucide="credit-card" class="stat-icon"></i>
+          <i data-lucide="layers" class="stat-icon"></i>
           <div class="stat-content">
-            <span class="stat-value">${totalOwned}</span>
-            <span class="stat-label">Cromos</span>
+            <span class="stat-value">${stats.total_cards_owned || 0}</span>
+            <span class="stat-label">Cromos Totales</span>
           </div>
         </div>
-        <div class="stat-box">
-          <i data-lucide="copy" class="stat-icon"></i>
-          <div class="stat-content">
-            <span class="stat-value">${totalDuplicates}</span>
-            <span class="stat-label">Repetidos</span>
-          </div>
-        </div>
+
         <div class="stat-box">
           <i data-lucide="trending-up" class="stat-icon"></i>
           <div class="stat-content">
@@ -154,23 +128,20 @@ const UserUI = {
     if (availableAlbums.length === 0) {
       container.innerHTML = `
         <div class="empty-state-small">
-          <p>Ya tienes todas las colecciones disponibles.</p>
+          <p>Ya estás en todos los álbumes disponibles.</p>
         </div>
       `;
       return;
     }
 
     container.innerHTML = availableAlbums.map(album => `
-      <div class="album-available-card" data-id="${album.id}">
+      <div class="album-card" data-id="${album.id}">
         <div class="album-header" style="background: ${album.color};">
           <h4>${Utils.escapeHtml(album.name)}</h4>
         </div>
         <div class="album-body">
-          <div class="album-info">
-            ${album.season ? `<span><i data-lucide="calendar"></i> ${Utils.escapeHtml(album.season)}</span>` : ''}
-            ${album.competition ? `<span><i data-lucide="trophy"></i> ${Utils.escapeHtml(album.competition)}</span>` : ''}
-          </div>
-          <button class="btn btn-accent btn-join-album" data-id="${album.id}">
+          <p>${Utils.escapeHtml(album.description || 'Descripción no disponible')}</p>
+          <button class="btn btn-primary btn-join-album" data-album-id="${album.id}">
             <i data-lucide="plus-circle"></i>
             Unirse
           </button>
@@ -182,43 +153,54 @@ const UserUI = {
   },
 
   /**
-   * Configurar listeners del dashboard
+   * Setup listeners del dashboard (DELEGACIÓN DE EVENTOS)
    */
   setupDashboardListeners() {
-    // Abrir colección
-    document.querySelectorAll('.btn-open-collection').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const collectionId = btn.dataset.id;
-        this.openCollection(collectionId);
-      });
-    });
+    // Remover listeners anteriores
+    const myCollectionsList = document.getElementById('myCollectionsList');
+    const availableAlbumsList = document.getElementById('availableAlbumsList');
 
-    // Unirse a álbum
-    document.querySelectorAll('.btn-join-album').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const albumId = btn.dataset.id;
-        await this.joinAlbum(albumId);
+    // DELEGACIÓN: Un solo listener en el contenedor padre
+    if (myCollectionsList) {
+      myCollectionsList.replaceWith(myCollectionsList.cloneNode(true));
+      const newMyCollections = document.getElementById('myCollectionsList');
+      
+      newMyCollections.addEventListener('click', async (e) => {
+        const btn = e.target.closest('.btn-open-collection');
+        if (btn) {
+          const collectionId = btn.dataset.id;
+          await this.openCollection(collectionId);
+        }
       });
-    });
+    }
+
+    // DELEGACIÓN: Álbumes disponibles
+    if (availableAlbumsList) {
+      availableAlbumsList.replaceWith(availableAlbumsList.cloneNode(true));
+      const newAvailableAlbums = document.getElementById('availableAlbumsList');
+      
+      newAvailableAlbums.addEventListener('click', async (e) => {
+        const btn = e.target.closest('.btn-join-album');
+        if (btn) {
+          const albumId = btn.dataset.albumId;
+          await this.joinAlbum(albumId);
+        }
+      });
+    }
   },
 
   /**
    * Unirse a un álbum
    */
   async joinAlbum(albumId) {
-    if (!Utils.confirm('¿Unirse a este álbum?')) return;
-
     try {
       Utils.showLoader();
-      await API.joinCollection(albumId);
-      Utils.showToast('¡Te has unido al álbum!', 'success');
-      
-      // Recargar dashboard
-      this.showDashboard();
-      
+      await API.joinAlbum(albumId);
+      Utils.showToast('Te has unido al álbum', 'success');
+      await this.showDashboard();
     } catch (error) {
       console.error('Error joining album:', error);
-      Utils.showToast('Error al unirse: ' + error.message, 'error');
+      Utils.showToast('Error al unirse al álbum', 'error');
     } finally {
       Utils.hideLoader();
     }
@@ -232,10 +214,9 @@ const UserUI = {
       Utils.showLoader();
       this.currentCollectionId = collectionId;
       
-      // Primero cargar la colección para obtener el album_id
+      // Cargar datos
       const collection = await API.getCollection(collectionId);
       
-      // Luego cargar el resto en paralelo
       const [cards, categories, stats] = await Promise.all([
         API.getUserCards(collectionId),
         API.getCategories(collection.album_id),
@@ -245,7 +226,7 @@ const UserUI = {
       this.currentCards = cards;
       this.currentCategories = categories;
       
-      // Setear el color del álbum para los efectos CSS
+      // Setear el color del álbum
       const albumColor = collection.album.color || '#ED8936';
       document.documentElement.style.setProperty('--album-color', albumColor);
       
@@ -281,35 +262,32 @@ const UserUI = {
           id="filterSearch" 
           class="filter-input" 
           placeholder="Buscar por número o nombre..."
-          value="${this.filters.search}"
-        >
+          value="${this.filters.search}">
         
         <select id="filterCategory" class="filter-select">
           <option value="">Todas las categorías</option>
-          ${this.currentCategories.map(cat => 
-            `<option value="${cat.id}" ${this.filters.category === cat.id ? 'selected' : ''}>
+          ${this.currentCategories.map(cat => `
+            <option value="${cat.id}" ${this.filters.category === cat.id ? 'selected' : ''}>
               ${Utils.escapeHtml(cat.name)}
-            </option>`
-          ).join('')}
+            </option>
+          `).join('')}
         </select>
         
         <select id="filterStatus" class="filter-select">
           <option value="">Todos los estados</option>
-          <option value="tengo" ${this.filters.status === 'tengo' ? 'selected' : ''}>Tengo</option>
+          <option value="tengo" ${this.filters.status === 'tengo' ? 'selected' : ''}>Lo tengo</option>
           <option value="falta" ${this.filters.status === 'falta' ? 'selected' : ''}>Me falta</option>
           <option value="cambiado" ${this.filters.status === 'cambiado' ? 'selected' : ''}>Cambiado</option>
         </select>
         
-        <button id="btnClearFilters" class="btn btn-outline">
+        <button id="btnClearFilters" class="btn btn-secondary">
           <i data-lucide="x"></i>
           Limpiar
         </button>
-      </div>
-      
-      <div class="view-controls">
-        <button id="btnToggleView" class="btn btn-outline">
-          <i data-lucide="${this.viewMode === 'album' ? 'list' : 'layout-grid'}"></i>
-          ${this.viewMode === 'album' ? 'Vista Lista' : 'Vista Álbum'}
+        
+        <button id="btnToggleView" class="btn btn-secondary">
+          <i data-lucide="${this.viewMode === 'album' ? 'list' : 'grid'}"></i>
+          ${this.viewMode === 'album' ? 'Lista' : 'Álbum'}
         </button>
       </div>
     `;
@@ -318,7 +296,7 @@ const UserUI = {
   },
 
   /**
-   * Renderizar cromos
+   * Renderizar cromos con agrupaciones
    */
   renderCards() {
     const container = document.getElementById('cardsContainer');
@@ -355,7 +333,7 @@ const UserUI = {
   },
 
   /**
-   * Renderizar vista álbum
+   * Renderizar vista álbum con agrupaciones
    */
   renderAlbumView(groups, container) {
     if (groups.length === 0) {
@@ -363,7 +341,6 @@ const UserUI = {
       return;
     }
 
-    // Usar el sistema de agrupaciones
     container.innerHTML = CardGrouping.renderGroupedAlbumView(
       groups,
       (card) => this.renderAlbumCard(card)
@@ -406,11 +383,12 @@ const UserUI = {
                    value="${card.duplicates_count || 0}" 
                    min="0" 
                    data-card-id="${card.id}"
-                   ${card.status !== 'tengo' ? 'disabled' : ''}>
+                   ${card.status !== 'tengo' ? 'disabled' : ''}
+                   placeholder="0">
           </div>
         </div>
         
-        <div class="album-side-btn right ${card.status === 'tengo' ? 'active' : ''}"
+        <div class="album-side-btn right ${card.status === 'tengo' ? 'active' : ''}" 
              data-card-id="${card.id}" data-status="tengo">
           ✓
         </div>
@@ -419,7 +397,7 @@ const UserUI = {
   },
 
   /**
-   * Renderizar vista lista
+   * Renderizar vista lista con agrupaciones
    */
   renderListView(groups, container) {
     if (groups.length === 0) {
@@ -427,7 +405,6 @@ const UserUI = {
       return;
     }
 
-    // Usar el sistema de agrupaciones
     container.innerHTML = CardGrouping.renderGroupedListView(
       groups,
       (card) => this.renderListCard(card)
@@ -480,7 +457,7 @@ const UserUI = {
   },
 
   /**
-   * Configurar listeners de la colección
+   * Setup listeners de colección (DELEGACIÓN DE EVENTOS)
    */
   setupCollectionListeners() {
     // Botón volver
@@ -492,81 +469,94 @@ const UserUI = {
       });
     }
 
-    // Filtros
+    // Filtros con debounce
     const filterSearch = document.getElementById('filterSearch');
     if (filterSearch) {
-      filterSearch.addEventListener('input', Utils.debounce((e) => {
+      filterSearch.replaceWith(filterSearch.cloneNode(true));
+      document.getElementById('filterSearch').addEventListener('input', Utils.debounce((e) => {
         this.filters.search = e.target.value;
         this.renderCards();
-        this.setupCardListeners();
       }, 300));
     }
 
     const filterCategory = document.getElementById('filterCategory');
     if (filterCategory) {
-      filterCategory.addEventListener('change', (e) => {
+      filterCategory.replaceWith(filterCategory.cloneNode(true));
+      document.getElementById('filterCategory').addEventListener('change', (e) => {
         this.filters.category = e.target.value;
         this.renderCards();
-        this.setupCardListeners();
       });
     }
 
     const filterStatus = document.getElementById('filterStatus');
     if (filterStatus) {
-      filterStatus.addEventListener('change', (e) => {
+      filterStatus.replaceWith(filterStatus.cloneNode(true));
+      document.getElementById('filterStatus').addEventListener('change', (e) => {
         this.filters.status = e.target.value;
         this.renderCards();
-        this.setupCardListeners();
       });
     }
 
     const btnClearFilters = document.getElementById('btnClearFilters');
     if (btnClearFilters) {
-      btnClearFilters.addEventListener('click', () => {
+      btnClearFilters.replaceWith(btnClearFilters.cloneNode(true));
+      document.getElementById('btnClearFilters').addEventListener('click', () => {
         this.filters = { search: '', category: '', status: '' };
         this.renderFilters();
         this.renderCards();
         this.setupCollectionListeners();
-        this.setupCardListeners();
       });
     }
 
-    // Toggle vista
     const btnToggleView = document.getElementById('btnToggleView');
     if (btnToggleView) {
-      btnToggleView.addEventListener('click', () => {
+      btnToggleView.replaceWith(btnToggleView.cloneNode(true));
+      document.getElementById('btnToggleView').addEventListener('click', () => {
         this.viewMode = this.viewMode === 'album' ? 'list' : 'album';
         this.renderFilters();
         this.renderCards();
         this.setupCollectionListeners();
-        this.setupCardListeners();
       });
     }
 
-    this.setupCardListeners();
+    // DELEGACIÓN DE EVENTOS: Contenedor de cromos
+    this.setupCardListenersDelegation();
   },
 
   /**
-   * Configurar listeners de los cromos
+   * Setup listeners de cromos con DELEGACIÓN
+   * Un solo listener en el contenedor padre
    */
-  setupCardListeners() {
-    // Botones de estado (vista álbum y lista)
-    document.querySelectorAll('[data-status]').forEach(btn => {
-      btn.addEventListener('click', async (e) => {
+  setupCardListenersDelegation() {
+    const container = document.getElementById('cardsContainer');
+    if (!container) return;
+
+    // Remover listener anterior (si existe)
+    container.replaceWith(container.cloneNode(true));
+    const newContainer = document.getElementById('cardsContainer');
+
+    // UN SOLO LISTENER para TODO
+    newContainer.addEventListener('click', async (e) => {
+      // Botones de estado
+      const statusBtn = e.target.closest('[data-status]');
+      if (statusBtn) {
         e.stopPropagation();
-        const cardId = btn.dataset.cardId;
-        const status = btn.dataset.status;
+        const cardId = statusBtn.dataset.cardId;
+        const status = statusBtn.dataset.status;
         await this.updateCardStatus(cardId, status);
-      });
+        return;
+      }
     });
 
-    // Inputs de duplicados
-    document.querySelectorAll('.mini-duplicates-input, .duplicates-input').forEach(input => {
-      input.addEventListener('change', async (e) => {
+    // Inputs de duplicados (change event)
+    newContainer.addEventListener('change', async (e) => {
+      const input = e.target.closest('.mini-duplicates-input, .duplicates-input');
+      if (input) {
         const cardId = input.dataset.cardId;
         const count = parseInt(e.target.value) || 0;
         await this.updateCardDuplicates(cardId, count);
-      });
+        return;
+      }
     });
   },
 
@@ -590,9 +580,8 @@ const UserUI = {
         }
       }
       
-      // Re-renderizar solo la tarjeta afectada (optimización)
+      // Re-renderizar
       this.renderCards();
-      this.setupCardListeners();
       
       // Actualizar estadísticas
       const stats = await API.getCollectionStats(this.currentCollectionId);
@@ -622,7 +611,7 @@ const UserUI = {
       
     } catch (error) {
       console.error('Error updating duplicates:', error);
-      Utils.showToast('Error al actualizar repetidos', 'error');
+      Utils.showToast('Error al actualizar duplicados', 'error');
     }
   }
 };
