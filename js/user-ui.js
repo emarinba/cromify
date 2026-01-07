@@ -238,6 +238,10 @@ const UserUI = {
       UI.renderStats(stats, '#collectionStats');
       this.renderFilters();
       this.renderCards();
+      
+      // Setup listeners UNA VEZ
+      CardGroups.listen('cardsContainer', () => this.renderCards());
+      
       this.setupCollectionListeners();
       
     } catch (error) {
@@ -303,64 +307,46 @@ const UserUI = {
     if (!container) return;
 
     // Aplicar filtros
-    let filteredCards = [...this.currentCards];
+    let filtered = [...this.currentCards];
 
     if (this.filters.search) {
-      const search = this.filters.search.toLowerCase();
-      filteredCards = filteredCards.filter(c => 
-        c.number.toLowerCase().includes(search) ||
-        c.playerName.toLowerCase().includes(search)
+      const s = this.filters.search.toLowerCase();
+      filtered = filtered.filter(c => 
+        c.number.toLowerCase().includes(s) ||
+        c.playerName.toLowerCase().includes(s)
       );
     }
 
     if (this.filters.category) {
-      filteredCards = filteredCards.filter(c => c.categoryId === this.filters.category);
+      filtered = filtered.filter(c => c.categoryId === this.filters.category);
     }
 
     if (this.filters.status) {
-      filteredCards = filteredCards.filter(c => c.status === this.filters.status);
+      filtered = filtered.filter(c => c.status === this.filters.status);
     }
 
-    // Agrupar cromos
-    const groups = CardGrouping.groupCards(filteredCards, this.currentCategories);
+    // Agrupar
+    const groups = CardGroups.group(filtered, this.currentCategories);
 
-    // Renderizar según modo
-    if (this.viewMode === 'album') {
-      this.renderAlbumView(groups, container);
-    } else {
-      this.renderListView(groups, container);
-    }
-  },
-
-  /**
-   * Renderizar vista álbum con agrupaciones
-   */
-  renderAlbumView(groups, container) {
+    // Renderizar
     if (groups.length === 0) {
-      UI.showEmptyState('inbox', 'Sin resultados', 'No hay cromos que coincidan con los filtros', '#cardsContainer');
+      UI.showEmptyState('inbox', 'Sin resultados', 'No hay cromos', '#cardsContainer');
       return;
     }
 
-    container.innerHTML = CardGrouping.renderGroupedAlbumView(
-      groups,
-      (card) => this.renderAlbumCard(card)
-    );
-
-    // NO llamar setupGroupListeners aquí - ya está configurado
+    container.innerHTML = CardGroups.render(groups, card => this.renderCard(card));
 
     if (typeof lucide !== 'undefined') lucide.createIcons();
   },
 
   /**
-   * Renderizar tarjeta de cromo (vista álbum)
+   * Renderizar un cromo (sin vista específica)
    */
-  renderAlbumCard(card) {
+  renderCard(card) {
     return `
       <div class="card-album-item status-${card.status}" data-id="${card.id}">
         <div class="album-side-btn left ${card.status === 'falta' ? 'active' : ''}" 
-             data-card-id="${card.id}" data-status="falta">
-          ✗
-        </div>
+             data-card-id="${card.id}" data-status="falta">✗</div>
         
         <div class="album-card-content">
           <div class="album-card-number">${Utils.escapeHtml(card.number)}</div>
@@ -374,13 +360,9 @@ const UserUI = {
           
           <div class="album-bottom-controls">
             <button class="album-mini-btn ${card.status === 'cambiado' ? 'active' : ''}"
-                    data-card-id="${card.id}" data-status="cambiado">
-              ⇄
-            </button>
-            <input type="number" 
-                   class="mini-duplicates-input" 
-                   value="${card.duplicates_count || 0}" 
-                   min="0" 
+                    data-card-id="${card.id}" data-status="cambiado">⇄</button>
+            <input type="number" class="mini-duplicates-input" 
+                   value="${card.duplicates_count || 0}" min="0" 
                    data-card-id="${card.id}"
                    ${card.status !== 'tengo' ? 'disabled' : ''}
                    placeholder="0">
@@ -388,68 +370,7 @@ const UserUI = {
         </div>
         
         <div class="album-side-btn right ${card.status === 'tengo' ? 'active' : ''}" 
-             data-card-id="${card.id}" data-status="tengo">
-          ✓
-        </div>
-      </div>
-    `;
-  },
-
-  /**
-   * Renderizar vista lista con agrupaciones
-   */
-  renderListView(groups, container) {
-    if (groups.length === 0) {
-      UI.showEmptyState('inbox', 'Sin resultados', 'No hay cromos que coincidan con los filtros', '#cardsContainer');
-      return;
-    }
-
-    container.innerHTML = CardGrouping.renderGroupedListView(
-      groups,
-      (card) => this.renderListCard(card)
-    );
-
-    // NO llamar setupGroupListeners aquí - ya está configurado
-
-    if (typeof lucide !== 'undefined') lucide.createIcons();
-  },
-
-  /**
-   * Renderizar tarjeta de cromo (vista lista)
-   */
-  renderListCard(card) {
-    return `
-      <div class="card-list-item-compact status-${card.status}" data-id="${card.id}">
-        <div class="card-num">${Utils.escapeHtml(card.number)}</div>
-        <div class="card-info">
-          <div class="card-name">${Utils.escapeHtml(card.playerName)}</div>
-          <div class="card-meta">
-            ${Utils.escapeHtml(card.team || '')}
-            ${card.category ? ` • <span style="color: ${card.category.color}">■</span> ${Utils.escapeHtml(card.category.name)}` : ''}
-          </div>
-        </div>
-        <div class="card-actions-horizontal">
-          <button class="status-btn-horizontal ${card.status === 'falta' ? 'active' : ''}" 
-                  data-card-id="${card.id}" data-status="falta" title="No lo tengo">
-            ✗
-          </button>
-          <button class="status-btn-horizontal ${card.status === 'tengo' ? 'active' : ''}" 
-                  data-card-id="${card.id}" data-status="tengo" title="Lo tengo">
-            ✓
-          </button>
-          <button class="status-btn-horizontal ${card.status === 'cambiado' ? 'active' : ''}" 
-                  data-card-id="${card.id}" data-status="cambiado" title="Cambiado">
-            ⇄
-          </button>
-          <input type="number" 
-                 class="duplicates-input" 
-                 value="${card.duplicates_count || 0}" 
-                 min="0" 
-                 data-card-id="${card.id}"
-                 ${card.status !== 'tengo' ? 'disabled' : ''}
-                 title="Repetidos" 
-                 placeholder="0">
-        </div>
+             data-card-id="${card.id}" data-status="tengo">✓</div>
       </div>
     `;
   },

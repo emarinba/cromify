@@ -4880,3 +4880,236 @@ body.dark-mode .scroll-to-top-btn {
   background: var(--album-color, var(--accent));
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
+/* ============================================================================
+   GRUPOS - Sistema desde cero
+   ============================================================================ */
+
+/* Toolbar */
+.groups-toolbar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+  padding: 16px 0;
+}
+
+.btn-ghost {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-ghost:hover {
+  background: var(--bg-secondary);
+  border-color: var(--album-color);
+  color: var(--album-color);
+}
+
+.btn-ghost i {
+  width: 18px;
+  height: 18px;
+}
+
+/* Lista de grupos */
+.groups-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Grupo individual */
+.group {
+  background: var(--bg-card);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  transition: box-shadow 0.2s;
+}
+
+.group:hover {
+  box-shadow: var(--shadow-md);
+}
+
+/* Header del grupo */
+.group-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 24px;
+  background: var(--bg-secondary);
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
+  text-align: left;
+}
+
+.group-header:hover {
+  background: var(--bg-card);
+}
+
+.group.expanded .group-header {
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+}
+
+.group-icon {
+  width: 20px;
+  height: 20px;
+  color: var(--text-secondary);
+  transition: transform 0.2s, color 0.2s;
+  flex-shrink: 0;
+}
+
+.group.expanded .group-icon {
+  color: var(--album-color);
+}
+
+.group-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.group-name {
+  flex: 1;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0;
+}
+
+.group.expanded .group-name {
+  color: var(--album-color);
+}
+
+.group-counter {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.group-counter strong {
+  font-size: 16px;
+  color: var(--album-color);
+}
+
+.group-percent {
+  padding: 4px 10px;
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+.group.expanded .group-percent {
+  background: color-mix(in srgb, var(--album-color) 15%, var(--bg-card));
+  color: var(--album-color);
+}
+
+/* Body del grupo */
+.group-body {
+  padding: 24px;
+}
+
+.group-body[hidden] {
+  display: none;
+}
+
+/* Grid de cromos - TAMAÑO CONSISTENTE */
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 20px;
+  max-width: 100%;
+}
+
+/* FORZAR tamaño máximo para evitar cromos gigantes */
+.cards-grid > * {
+  max-width: 220px;
+  justify-self: start;
+}
+
+/* En pantallas grandes, centrar cuando hay pocos */
+@media (min-width: 1200px) {
+  .cards-grid {
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  }
+  
+  /* Si solo hay 1-2 items, limitar el grid */
+  .cards-grid:has(> :nth-child(1):nth-last-child(1)),
+  .cards-grid:has(> :nth-child(2):nth-last-child(1)) {
+    grid-template-columns: repeat(auto-fill, 200px);
+    justify-content: start;
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .groups-toolbar {
+    flex-direction: column;
+  }
+
+  .btn-ghost {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .group-header {
+    padding: 16px 20px;
+  }
+
+  .group-name {
+    font-size: 16px;
+  }
+
+  .group-body {
+    padding: 20px;
+  }
+
+  .cards-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .group-header {
+    padding: 14px 16px;
+    gap: 10px;
+  }
+
+  .group-name {
+    font-size: 15px;
+  }
+
+  .group-counter {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+  }
+
+  .cards-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+  }
+}
+
+/* Dark mode */
+body.dark-mode .group-header {
+  background: var(--bg-secondary);
+}
+
+body.dark-mode .group.expanded .group-header {
+  background: var(--bg-card);
+}
