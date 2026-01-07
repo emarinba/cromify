@@ -343,30 +343,34 @@ const UserUI = {
       filteredCards = filteredCards.filter(c => c.status === this.filters.status);
     }
 
+    // Agrupar cromos
+    const groups = CardGrouping.groupCards(filteredCards, this.currentCategories);
+
     // Renderizar según modo
     if (this.viewMode === 'album') {
-      this.renderAlbumView(filteredCards, container);
+      this.renderAlbumView(groups, container);
     } else {
-      this.renderListView(filteredCards, container);
+      this.renderListView(groups, container);
     }
   },
 
   /**
    * Renderizar vista álbum
    */
-  renderAlbumView(cards, container) {
-    if (cards.length === 0) {
+  renderAlbumView(groups, container) {
+    if (groups.length === 0) {
       UI.showEmptyState('inbox', 'Sin resultados', 'No hay cromos que coincidan con los filtros', '#cardsContainer');
       return;
     }
 
-    const sortedCards = Utils.sortCards(cards);
-    
-    container.innerHTML = `
-      <div class="cards-album-grid">
-        ${sortedCards.map(card => this.renderAlbumCard(card)).join('')}
-      </div>
-    `;
+    // Usar el sistema de agrupaciones
+    container.innerHTML = CardGrouping.renderGroupedAlbumView(
+      groups,
+      (card) => this.renderAlbumCard(card)
+    );
+
+    // Setup listeners de grupos
+    CardGrouping.setupGroupListeners(container, () => this.renderCards());
 
     if (typeof lucide !== 'undefined') lucide.createIcons();
   },
@@ -417,19 +421,20 @@ const UserUI = {
   /**
    * Renderizar vista lista
    */
-  renderListView(cards, container) {
-    if (cards.length === 0) {
+  renderListView(groups, container) {
+    if (groups.length === 0) {
       UI.showEmptyState('inbox', 'Sin resultados', 'No hay cromos que coincidan con los filtros', '#cardsContainer');
       return;
     }
 
-    const sortedCards = Utils.sortCards(cards);
-    
-    container.innerHTML = `
-      <div class="cards-list">
-        ${sortedCards.map(card => this.renderListCard(card)).join('')}
-      </div>
-    `;
+    // Usar el sistema de agrupaciones
+    container.innerHTML = CardGrouping.renderGroupedListView(
+      groups,
+      (card) => this.renderListCard(card)
+    );
+
+    // Setup listeners de grupos
+    CardGrouping.setupGroupListeners(container, () => this.renderCards());
 
     if (typeof lucide !== 'undefined') lucide.createIcons();
   },
