@@ -239,10 +239,33 @@ const UserUI = {
       this.renderFilters();
       this.renderCards();
       
-      // Setup listeners UNA VEZ
+      // Setup listeners de grupos UNA VEZ
       CardGroups.listen('cardsContainer', () => this.renderCards());
       
-      this.setupCollectionListeners();
+      // Setup listeners de cromos EN EL MISMO CONTENEDOR
+      const cardsContainer = document.getElementById('cardsContainer');
+      
+      cardsContainer.addEventListener('click', async (e) => {
+        const statusBtn = e.target.closest('[data-status]');
+        if (statusBtn) {
+          e.stopPropagation();
+          const cardId = statusBtn.dataset.cardId;
+          const status = statusBtn.dataset.status;
+          await this.updateCardStatus(cardId, status);
+        }
+      });
+
+      cardsContainer.addEventListener('change', async (e) => {
+        const input = e.target.closest('.mini-duplicates-input, .duplicates-input');
+        if (input) {
+          const cardId = input.dataset.cardId;
+          const count = parseInt(e.target.value) || 0;
+          await this.updateCardDuplicates(cardId, count);
+        }
+      });
+    }
+  
+    this.setupCardListenersDelegation();
       
     } catch (error) {
       console.error('Error opening collection:', error);
