@@ -16,10 +16,6 @@ const UserUI = {
   async showDashboard() {
     try {
       Utils.showLoader();
-      
-      // Resetear flag de listeners
-      CardGrouping.listenersInitialized = false;
-      
       Utils.showView('viewUserDashboard');
       
       const [stats, collections, albums] = await Promise.all([
@@ -242,10 +238,6 @@ const UserUI = {
       UI.renderStats(stats, '#collectionStats');
       this.renderFilters();
       this.renderCards();
-      
-      // Setup listeners UNA SOLA VEZ
-      CardGrouping.setupGroupListeners('#cardsContainer', () => this.renderCards());
-      
       this.setupCollectionListeners();
       
     } catch (error) {
@@ -537,12 +529,42 @@ const UserUI = {
     const container = document.getElementById('cardsContainer');
     if (!container) return;
 
-    // Remover listener anterior (si existe)
+    // Remover listener anterior
     container.replaceWith(container.cloneNode(true));
     const newContainer = document.getElementById('cardsContainer');
 
-    // UN SOLO LISTENER para TODO
+    // DELEGACIÓN: Un solo listener para TODO
     newContainer.addEventListener('click', async (e) => {
+      // Grupos: Toggle individual
+      const toggleGroup = e.target.closest('[data-action="toggle-group"]');
+      if (toggleGroup) {
+        e.preventDefault();
+        const groupKey = toggleGroup.dataset.group;
+        CardGrouping.toggleGroup(groupKey);
+        this.renderCards();
+        return;
+      }
+
+      // Grupos: Expandir todos
+      const expandAll = e.target.closest('[data-action="expand-all"]');
+      if (expandAll) {
+        e.preventDefault();
+        const allGroups = newContainer.querySelectorAll('[data-group]');
+        const groupKeys = Array.from(allGroups).map(g => g.dataset.group).filter(Boolean);
+        CardGrouping.expandAll(groupKeys);
+        this.renderCards();
+        return;
+      }
+
+      // Grupos: Colapsar todos
+      const collapseAll = e.target.closest('[data-action="collapse-all"]');
+      if (collapseAll) {
+        e.preventDefault();
+        CardGrouping.collapseAll();
+        this.renderCards();
+        return;
+      }
+
       // Botones de estado
       const statusBtn = e.target.closest('[data-status]');
       if (statusBtn) {
@@ -554,7 +576,7 @@ const UserUI = {
       }
     });
 
-    // Inputs de duplicados (change event)
+    // Inputs de duplicados
     newContainer.addEventListener('change', async (e) => {
       const input = e.target.closest('.mini-duplicates-input, .duplicates-input');
       if (input) {
