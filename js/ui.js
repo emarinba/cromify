@@ -245,7 +245,21 @@ const UI = {
     const container = document.querySelector(containerSelector);
     if (!container || !stats) return;
 
+    const percentage = stats.completion_percentage || 0;
+
     const html = `
+      <!-- Barra de progreso principal -->
+      <div class="album-progress-container">
+        <div class="album-progress-text">
+          <span>Progreso del álbum</span>
+          <span class="album-progress-percentage">${percentage}%</span>
+        </div>
+        <div class="album-progress-bar">
+          <div class="album-progress-fill" style="width: ${percentage}%"></div>
+        </div>
+      </div>
+
+      <!-- Estadísticas en grid -->
       <div class="stats-grid">
         <div class="stat-card">
           <div class="stat-icon" style="background: var(--bg-tengo);">
@@ -277,17 +291,13 @@ const UI = {
           </div>
         </div>
         
-        <div class="stat-card stat-progress">
+        <div class="stat-card">
+          <div class="stat-icon" style="background: var(--bg-secondary);">
+            <i data-lucide="hash" style="color: var(--album-color);"></i>
+          </div>
           <div class="stat-info">
-            <span class="stat-label">Progreso</span>
-            <span class="stat-value">${stats.completion_percentage || 0}%</span>
-          </div>
-          <div class="progress-bar-container">
-            <div class="progress-bar-fill" style="width: ${stats.completion_percentage || 0}%"></div>
-          </div>
-          <div class="progress-text">
-            <span class="current">${stats.cards_owned || 0} cromos</span>
-            <span class="total">de ${stats.total_cards || 0}</span>
+            <span class="stat-label">Total</span>
+            <span class="stat-value">${stats.total_cards || 0}</span>
           </div>
         </div>
       </div>

@@ -142,7 +142,24 @@ const Auth = {
         password
       });
 
-      if (error) throw error;
+      if (error) {
+        // Mensajes de error específicos según el tipo
+        if (error.message.includes('Invalid login credentials')) {
+          const errorDetail = new Error('Usuario o contraseña incorrectos');
+          errorDetail.code = 'INVALID_CREDENTIALS';
+          throw errorDetail;
+        } else if (error.message.includes('Email not confirmed')) {
+          const errorDetail = new Error('Verifica tu email antes de iniciar sesión');
+          errorDetail.code = 'EMAIL_NOT_CONFIRMED';
+          throw errorDetail;
+        } else if (error.message.includes('User not found')) {
+          const errorDetail = new Error('Este usuario no existe');
+          errorDetail.code = 'USER_NOT_FOUND';
+          throw errorDetail;
+        } else {
+          throw error;
+        }
+      }
 
       console.log('✅ Sesión iniciada');
       

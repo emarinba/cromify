@@ -120,13 +120,33 @@ const Utils = {
    */
   sortCards(cards) {
     return [...cards].sort((a, b) => {
-      const aNum = parseInt(a.number);
-      const bNum = parseInt(b.number);
+      // Extraer números de los cromos
+      const aMatch = a.number.match(/(\d+)([a-zA-Z]*)/);
+      const bMatch = b.number.match(/(\d+)([a-zA-Z]*)/);
       
-      if (!isNaN(aNum) && !isNaN(bNum)) return aNum - bNum;
-      if (!isNaN(aNum)) return -1;
-      if (!isNaN(bNum)) return 1;
+      // Si ambos tienen números
+      if (aMatch && bMatch) {
+        const aNum = parseInt(aMatch[1]);
+        const bNum = parseInt(bMatch[1]);
+        
+        // Comparar por número primero
+        if (aNum !== bNum) {
+          return aNum - bNum;
+        }
+        
+        // Si los números son iguales, comparar sufijos (bis, a, b, etc)
+        const aSuffix = aMatch[2] || '';
+        const bSuffix = bMatch[2] || '';
+        return aSuffix.localeCompare(bSuffix);
+      }
       
+      // Si solo A tiene número, A va primero
+      if (aMatch && !bMatch) return -1;
+      
+      // Si solo B tiene número, B va primero
+      if (!aMatch && bMatch) return 1;
+      
+      // Si ninguno tiene número (solo letras), ordenar alfabéticamente
       return a.number.localeCompare(b.number);
     });
   },

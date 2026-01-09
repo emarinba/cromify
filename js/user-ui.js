@@ -280,8 +280,16 @@ const UserUI = {
       // Mostrar vista
       Utils.showView('viewCollection');
       
-      // Renderizar
-      document.getElementById('collectionTitle').textContent = collection.album.name;
+      // Renderizar título con color del álbum
+      const titleElement = document.getElementById('collectionTitle');
+      titleElement.textContent = collection.album.name;
+      
+      // Aplicar color del álbum a toda la vista
+      const collectionView = document.getElementById('viewCollection');
+      if (collectionView) {
+        collectionView.style.setProperty('--album-color', collection.album.color);
+      }
+      
       UI.renderStats(stats, '#collectionStats');
       this.renderFilters();
       this.renderCards();
@@ -400,37 +408,74 @@ const UserUI = {
   },
 
   /**
-   * Renderizar un cromo (vista álbum)
+   * Renderizar un cromo (vista álbum) - REDISEÑADO
    */
   renderCard(card) {
     return `
       <div class="card-album-item status-${card.status}" data-id="${card.id}">
-        <div class="album-side-btn left ${card.status === 'falta' ? 'active' : ''}" 
-             data-card-action="status" data-card-id="${card.id}" data-status="falta">✗</div>
+        <!-- Botón estado izquierdo: FALTA -->
+        <div class="card-status-btn left ${card.status === 'falta' ? 'active' : ''}" 
+             data-card-action="status" data-card-id="${card.id}" data-status="falta"
+             title="Me falta">
+          <i data-lucide="x"></i>
+        </div>
         
-        <div class="album-card-content">
-          <div class="album-card-number">${Utils.escapeHtml(card.number)}</div>
-          <div class="album-card-name">${Utils.escapeHtml(card.playerName)}</div>
-          <div class="album-card-team">${Utils.escapeHtml(card.team || '')}</div>
+        <!-- Contenido central de la tarjeta -->
+        <div class="card-content">
+          <div class="card-number">${Utils.escapeHtml(card.number)}</div>
+          <div class="card-player-name">${Utils.escapeHtml(card.playerName)}</div>
+          <div class="card-team">${Utils.escapeHtml(card.team || '')}</div>
           ${card.category ? `
-            <div class="album-card-category" style="color: ${card.category.color}">
+            <div class="card-category" style="background: ${card.category.color};">
               ${Utils.escapeHtml(card.category.name)}
             </div>
           ` : ''}
           
-          <div class="album-bottom-controls">
-            <button class="album-mini-btn ${card.status === 'cambiado' ? 'active' : ''}"
-                    data-card-action="status" data-card-id="${card.id}" data-status="cambiado">⇄</button>
-            <input type="number" class="mini-duplicates-input" 
-                   value="${card.duplicates_count || 0}" min="0" 
-                   data-card-action="duplicates" data-card-id="${card.id}"
-                   ${card.status !== 'tengo' ? 'disabled' : ''}
-                   placeholder="0">
+          <!-- Controles de repetidos y cambiado -->
+          <div class="card-controls" ${card.status !== 'tengo' ? 'style="opacity: 0.3; pointer-events: none;"' : ''}>
+            <!-- Repetidos con botones +/- -->
+            <div class="card-duplicates-control">
+              <button class="btn-duplicate-action minus" 
+                      data-card-action="duplicate-minus" 
+                      data-card-id="${card.id}"
+                      ${card.status !== 'tengo' || card.duplicates_count <= 0 ? 'disabled' : ''}
+                      title="Restar repetido">
+                <i data-lucide="minus"></i>
+              </button>
+              
+              <div class="duplicates-display">
+                <div class="duplicates-icon"><i data-lucide="layers"></i></div>
+                <span class="duplicates-count">${card.duplicates_count || 0}</span>
+              </div>
+              
+              <button class="btn-duplicate-action plus" 
+                      data-card-action="duplicate-plus" 
+                      data-card-id="${card.id}"
+                      ${card.status !== 'tengo' ? 'disabled' : ''}
+                      title="Sumar repetido">
+                <i data-lucide="plus"></i>
+              </button>
+            </div>
+            
+            <!-- Botón cambiado -->
+            <button class="btn-trade ${card.status === 'cambiado' ? 'active' : ''}"
+                    data-card-action="status" 
+                    data-card-id="${card.id}" 
+                    data-status="cambiado"
+                    ${card.status !== 'tengo' ? 'disabled' : ''}
+                    title="Para cambiar">
+              <i data-lucide="repeat"></i>
+              <span>Cambiar</span>
+            </button>
           </div>
         </div>
         
-        <div class="album-side-btn right ${card.status === 'tengo' ? 'active' : ''}" 
-             data-card-action="status" data-card-id="${card.id}" data-status="tengo">✓</div>
+        <!-- Botón estado derecho: TENGO -->
+        <div class="card-status-btn right ${card.status === 'tengo' ? 'active' : ''}" 
+             data-card-action="status" data-card-id="${card.id}" data-status="tengo"
+             title="Lo tengo">
+          <i data-lucide="check"></i>
+        </div>
       </div>
     `;
   },
@@ -657,6 +702,31 @@ const UserUI = {
         await this.updateCardStatus(cardId, status);
         return;
       }
+
+      // 3. BOTONES +/- DE DUPLICADOS
+      const duplicatePlus = e.target.closest('[data-card-action="duplicate-plus"]');
+      if (duplicatePlus) {
+        e.stopPropagation();
+        const cardId = duplicatePlus.dataset.cardId;
+        const card = this.currentCards.find(c => c.id === cardId);
+        if (card && card.status === 'tengo') {
+          const newCount = (card.duplicates_count || 0) + 1;
+          await this.updateCardDuplicates(cardId, newCount);
+        }
+        return;
+      }
+
+      const duplicateMinus = e.target.closest('[data-card-action="duplicate-minus"]');
+      if (duplicateMinus) {
+        e.stopPropagation();
+        const cardId = duplicateMinus.dataset.cardId;
+        const card = this.currentCards.find(c => c.id === cardId);
+        if (card && card.status === 'tengo' && card.duplicates_count > 0) {
+          const newCount = card.duplicates_count - 1;
+          await this.updateCardDuplicates(cardId, newCount);
+        }
+        return;
+      }
     });
 
     // ÚNICO LISTENER para cambios (duplicados)
@@ -671,7 +741,7 @@ const UserUI = {
   },
 
   /**
-   * Actualizar estado de cromo (OPTIMISTA - UX rápida)
+   * Actualizar estado de cromo (OPTIMISTA - UX rápida y sin parpadeos)
    */
   async updateCardStatus(cardId, status) {
     // Encontrar el cromo
@@ -691,11 +761,10 @@ const UserUI = {
         card.duplicates_count = 0;
       }
       
-      // Renderizar inmediatamente (el usuario ve el cambio al instante)
-      this.renderCards();
-      this.setupCardsContainerListeners();
+      // 2. ACTUALIZAR SOLO EL CROMO AFECTADO (sin re-renderizar todo)
+      this.updateSingleCardUI(card);
       
-      // 2. SINCRONIZAR CON BD - En segundo plano
+      // 3. SINCRONIZAR CON BD - En segundo plano
       const updateData = { status };
       if (status !== 'tengo') {
         updateData.duplicates_count = 0;
@@ -703,7 +772,7 @@ const UserUI = {
       
       await API.updateUserCard(cardId, updateData);
       
-      // 3. ACTUALIZAR ESTADÍSTICAS - Sin bloquear UI
+      // 4. ACTUALIZAR ESTADÍSTICAS - Sin bloquear UI
       const stats = await API.getCollectionStats(this.currentCollectionId);
       UI.renderStats(stats, '#collectionStats');
       
@@ -714,30 +783,143 @@ const UserUI = {
       card.status = previousStatus;
       card.duplicates_count = previousDuplicates;
       
-      this.renderCards();
-      this.setupCardsContainerListeners();
+      this.updateSingleCardUI(card);
       
       Utils.showToast('Error al actualizar. Se restauró el estado anterior.', 'error');
     }
   },
 
   /**
-   * Actualizar duplicados de cromo
+   * Actualizar solo la UI de un cromo específico (sin re-renderizar todo)
+   */
+  updateSingleCardUI(card) {
+    // Buscar el elemento del cromo en el DOM
+    const cardElement = document.querySelector(`[data-id="${card.id}"]`);
+    if (!cardElement) {
+      console.warn('Card element not found:', card.id);
+      return;
+    }
+
+    // Actualizar clases de estado en el contenedor principal
+    cardElement.classList.remove('status-falta', 'status-tengo', 'status-cambiado');
+    cardElement.classList.add(`status-${card.status}`);
+
+    if (this.viewMode === 'list') {
+      // Vista lista - actualizar botones de estado
+      const buttons = cardElement.querySelectorAll('.btn-status');
+      buttons.forEach(btn => {
+        const btnStatus = btn.dataset.status;
+        if (btnStatus === card.status) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+
+      // Actualizar campo de duplicados
+      const duplicatesInput = cardElement.querySelector('.input-duplicates');
+      if (duplicatesInput) {
+        duplicatesInput.value = card.duplicates_count || 0;
+        duplicatesInput.disabled = card.status !== 'tengo';
+      }
+    } else {
+      // Vista álbum - actualizar botones de estado laterales
+      const leftBtn = cardElement.querySelector('.card-status-btn.left');
+      const rightBtn = cardElement.querySelector('.card-status-btn.right');
+      
+      if (leftBtn) {
+        if (card.status === 'falta') {
+          leftBtn.classList.add('active');
+        } else {
+          leftBtn.classList.remove('active');
+        }
+      }
+      
+      if (rightBtn) {
+        if (card.status === 'tengo') {
+          rightBtn.classList.add('active');
+        } else {
+          rightBtn.classList.remove('active');
+        }
+      }
+
+      // Actualizar botón de cambiado
+      const tradeBtn = cardElement.querySelector('.btn-trade');
+      if (tradeBtn) {
+        if (card.status === 'cambiado') {
+          tradeBtn.classList.add('active');
+        } else {
+          tradeBtn.classList.remove('active');
+        }
+        
+        // Habilitar/deshabilitar según estado
+        tradeBtn.disabled = card.status !== 'tengo';
+      }
+
+      // Actualizar contador de duplicados
+      const countElement = cardElement.querySelector('.duplicates-count');
+      if (countElement) {
+        countElement.textContent = card.duplicates_count || 0;
+      }
+
+      // Actualizar botones +/-
+      const minusBtn = cardElement.querySelector('[data-card-action="duplicate-minus"]');
+      const plusBtn = cardElement.querySelector('[data-card-action="duplicate-plus"]');
+      
+      if (minusBtn) {
+        minusBtn.disabled = card.status !== 'tengo' || card.duplicates_count <= 0;
+      }
+      
+      if (plusBtn) {
+        plusBtn.disabled = card.status !== 'tengo';
+      }
+
+      // Mostrar/ocultar controles según estado
+      const controls = cardElement.querySelector('.card-controls');
+      if (controls) {
+        if (card.status === 'tengo') {
+          controls.style.opacity = '1';
+          controls.style.pointerEvents = 'auto';
+        } else {
+          controls.style.opacity = '0.3';
+          controls.style.pointerEvents = 'none';
+        }
+      }
+    }
+
+    // Refrescar iconos de Lucide
+    if (typeof lucide !== 'undefined') {
+      lucide.createIcons({ attrs: { 'stroke-width': 2 } });
+    }
+  },
+
+  /**
+   * Actualizar duplicados de cromo (con actualización optimista)
    */
   async updateCardDuplicates(cardId, count) {
+    const card = this.currentCards.find(c => c.id === cardId);
+    if (!card) return;
+
+    const previousCount = card.duplicates_count;
+
     try {
+      // Actualización optimista
+      card.duplicates_count = count;
+      this.updateSingleCardUI(card);
+
+      // Sincronizar con BD
       await API.updateUserCard(cardId, { duplicates_count: count });
-      
-      const card = this.currentCards.find(c => c.id === cardId);
-      if (card) {
-        card.duplicates_count = count;
-      }
       
       const stats = await API.getCollectionStats(this.currentCollectionId);
       UI.renderStats(stats, '#collectionStats');
       
     } catch (error) {
       console.error('Error updating duplicates:', error);
+      
+      // Rollback
+      card.duplicates_count = previousCount;
+      this.updateSingleCardUI(card);
+      
       Utils.showToast('Error al actualizar duplicados', 'error');
     }
   }

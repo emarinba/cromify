@@ -150,16 +150,25 @@ const App = {
   async handleLogin(e) {
     e.preventDefault();
     
-    const email = document.getElementById('loginEmail').value.trim();
-    const password = document.getElementById('loginPassword').value;
+    const emailInput = document.getElementById('loginEmail');
+    const passwordInput = document.getElementById('loginPassword');
+    const email = emailInput.value.trim();
+    const password = passwordInput.value;
+
+    // Limpiar estados de error previos
+    emailInput.classList.remove('input-error');
+    passwordInput.classList.remove('input-error');
 
     if (!email || !password) {
       Utils.showToast('Completa todos los campos', 'warning');
+      if (!email) emailInput.classList.add('input-error');
+      if (!password) passwordInput.classList.add('input-error');
       return;
     }
 
     if (!Utils.isValidEmail(email)) {
       Utils.showToast('Email inválido', 'warning');
+      emailInput.classList.add('input-error');
       return;
     }
 
@@ -176,7 +185,20 @@ const App = {
     } catch (error) {
       console.error('❌ Login error:', error);
       Utils.hideLoader();
-      Utils.showToast('Credenciales incorrectas', 'error');
+      
+      // Feedback visual y toast según el tipo de error
+      emailInput.classList.add('input-error');
+      passwordInput.classList.add('input-error');
+      
+      if (error.code === 'INVALID_CREDENTIALS') {
+        Utils.showToast('Usuario o contraseña incorrectos', 'error');
+      } else if (error.code === 'USER_NOT_FOUND') {
+        Utils.showToast('Este usuario no existe', 'error');
+      } else if (error.code === 'EMAIL_NOT_CONFIRMED') {
+        Utils.showToast('Verifica tu email antes de iniciar sesión', 'error');
+      } else {
+        Utils.showToast(error.message || 'Error al iniciar sesión', 'error');
+      }
     }
     // NO poner hideLoader() aquí, se hará cuando showApp termine
   },
