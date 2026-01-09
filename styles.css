@@ -5644,7 +5644,7 @@ body.dark-mode .modal-toolbar {
 
 /* Botones laterales de estado */
 .card-status-btn {
-  flex: 0 0 32px;
+  flex: 0 0 48px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -5730,7 +5730,6 @@ body.dark-mode .modal-toolbar {
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-top: auto;
-  text-align: center;
 }
 
 /* Controles de repetidos y cambiado */
@@ -5863,7 +5862,7 @@ body.dark-mode .modal-toolbar {
   }
   
   .card-status-btn {
-    flex: 0 0 32px;
+    flex: 0 0 40px;
   }
   
   .card-status-btn i {
@@ -6563,7 +6562,7 @@ body.dark-mode .collection-card:hover {
   }
   
   .card-status-btn {
-    flex: 0 0 32px !important;
+    flex: 0 0 42px !important;
   }
 }
 
@@ -6596,7 +6595,7 @@ body.dark-mode .collection-card:hover {
   }
   
   .card-status-btn {
-    flex: 0 0 32px !important;
+    flex: 0 0 38px !important;
   }
   
   .card-status-btn i {
@@ -6655,7 +6654,7 @@ body.dark-mode .collection-card:hover {
   justify-content: center;
   gap: var(--space-1);
   padding: 8px 12px;
-  background: var(---cambiado);
+  background: var(--bg-secondary);
   border: 2px solid var(--border);
   border-radius: var(--radius);
   cursor: pointer;
@@ -6974,6 +6973,331 @@ body.dark-mode .btn-status[data-status="cambiado"].active {
     min-width: 70px;
     padding: 5px 10px;
     font-size: 12px;
+  }
+}
+
+
+/* =====================================================
+   VISTA ÁLBUM - OPTIMIZACIÓN MÓVIL
+   ===================================================== */
+
+/* Móvil grande: 480-640px - Ajustes moderados */
+@media (max-width: 640px) {
+  .card-album-item {
+    min-height: 165px !important;
+  }
+  
+  /* Botones laterales más estrechos */
+  .card-status-btn {
+    flex: 0 0 36px !important;
+  }
+  
+  .card-status-btn i {
+    width: 20px !important;
+    height: 20px !important;
+  }
+  
+  /* Contenido con menos padding */
+  .card-content {
+    padding: 10px !important;
+    gap: 6px !important;
+  }
+  
+  /* Textos ligeramente más pequeños */
+  .card-number {
+    font-size: 18px !important;
+  }
+  
+  .card-player-name {
+    font-size: 13px !important;
+  }
+  
+  .card-team {
+    font-size: 11px !important;
+  }
+  
+  /* Categoría más compacta */
+  .card-category {
+    padding: 2px 6px !important;
+    font-size: 9px !important;
+  }
+  
+  /* Controles más compactos */
+  .card-controls {
+    gap: 6px !important;
+    padding-top: 6px !important;
+  }
+  
+  .btn-trade {
+    padding: 5px 8px !important;
+    font-size: 11px !important;
+  }
+  
+  .btn-trade span {
+    display: none; /* Ocultar texto "Cambiado" */
+  }
+  
+  .btn-trade i {
+    width: 16px !important;
+    height: 16px !important;
+  }
+  
+  .btn-duplicate-action {
+    width: 26px !important;
+    height: 26px !important;
+  }
+  
+  .btn-duplicate-action i {
+    width: 14px !important;
+    height: 14px !important;
+  }
+  
+  .duplicates-display {
+    padding: 4px 8px !important;
+    min-width: 50px !important;
+  }
+  
+  .duplicates-icon i {
+    width: 14px !important;
+    height: 14px !important;
+  }
+  
+  .duplicates-count {
+    font-size: 13px !important;
+  }
+}
+
+/* Móvil estándar: 400-479px - Ajustes significativos */
+@media (max-width: 479px) {
+  .card-album-item {
+    min-height: 155px !important;
+  }
+  
+  /* Botones laterales más estrechos */
+  .card-status-btn {
+    flex: 0 0 32px !important;
+  }
+  
+  .card-status-btn i {
+    width: 18px !important;
+    height: 18px !important;
+  }
+  
+  /* Contenido más compacto */
+  .card-content {
+    padding: 8px !important;
+    gap: 5px !important;
+  }
+  
+  /* Textos más pequeños */
+  .card-number {
+    font-size: 16px !important;
+    margin-bottom: 4px !important;
+  }
+  
+  .card-player-name {
+    font-size: 12px !important;
+    -webkit-line-clamp: 1 !important; /* Solo 1 línea */
+    margin-bottom: 3px !important;
+  }
+  
+  .card-team {
+    font-size: 10px !important;
+    margin-bottom: 4px !important;
+  }
+  
+  /* Ocultar categoría para ahorrar espacio */
+  .card-category {
+    display: none !important;
+  }
+  
+  /* Controles muy compactos */
+  .card-controls {
+    gap: 5px !important;
+    padding-top: 5px !important;
+    border-top: 1px solid var(--border-light);
+  }
+  
+  .btn-trade {
+    padding: 4px 6px !important;
+    font-size: 10px !important;
+    min-width: auto !important;
+  }
+  
+  .btn-trade span {
+    display: none !important;
+  }
+  
+  .btn-trade i {
+    width: 16px !important;
+    height: 16px !important;
+    margin: 0 !important;
+  }
+  
+  .card-duplicates-control {
+    gap: 4px !important;
+  }
+  
+  .btn-duplicate-action {
+    width: 24px !important;
+    height: 24px !important;
+  }
+  
+  .btn-duplicate-action i {
+    width: 12px !important;
+    height: 12px !important;
+  }
+  
+  .duplicates-display {
+    padding: 3px 6px !important;
+    min-width: 45px !important;
+  }
+  
+  .duplicates-icon i {
+    width: 12px !important;
+    height: 12px !important;
+  }
+  
+  .duplicates-count {
+    font-size: 12px !important;
+    min-width: 16px !important;
+  }
+}
+
+/* Móvil pequeño: < 400px - Máxima compactación */
+@media (max-width: 399px) {
+  .card-album-item {
+    min-height: 145px !important;
+  }
+  
+  /* Botones laterales mínimos pero usables */
+  .card-status-btn {
+    flex: 0 0 30px !important;
+  }
+  
+  .card-status-btn i {
+    width: 16px !important;
+    height: 16px !important;
+  }
+  
+  /* Contenido ultra compacto */
+  .card-content {
+    padding: 6px !important;
+    gap: 4px !important;
+  }
+  
+  /* Textos mínimos */
+  .card-number {
+    font-size: 15px !important;
+    margin-bottom: 3px !important;
+  }
+  
+  .card-player-name {
+    font-size: 11px !important;
+    -webkit-line-clamp: 1 !important;
+    margin-bottom: 2px !important;
+  }
+  
+  .card-team {
+    display: none !important; /* Ocultar equipo */
+  }
+  
+  .card-category {
+    display: none !important;
+  }
+  
+  /* Controles mínimos */
+  .card-controls {
+    gap: 4px !important;
+    padding-top: 4px !important;
+  }
+  
+  .btn-trade {
+    padding: 3px 5px !important;
+  }
+  
+  .btn-trade i {
+    width: 14px !important;
+    height: 14px !important;
+  }
+  
+  .card-duplicates-control {
+    gap: 3px !important;
+  }
+  
+  .btn-duplicate-action {
+    width: 22px !important;
+    height: 22px !important;
+  }
+  
+  .btn-duplicate-action i {
+    width: 11px !important;
+    height: 11px !important;
+  }
+  
+  .duplicates-display {
+    padding: 2px 5px !important;
+    min-width: 40px !important;
+  }
+  
+  .duplicates-icon i {
+    width: 11px !important;
+    height: 11px !important;
+  }
+  
+  .duplicates-count {
+    font-size: 11px !important;
+    min-width: 14px !important;
+  }
+}
+
+/* Grid con menos espacio en móvil */
+@media (max-width: 640px) {
+  .cards-grid {
+    gap: 14px !important;
+    padding: 12px !important;
+  }
+}
+
+@media (max-width: 479px) {
+  .cards-grid {
+    gap: 10px !important;
+    padding: 10px !important;
+  }
+}
+
+@media (max-width: 399px) {
+  .cards-grid {
+    gap: 8px !important;
+    padding: 8px !important;
+  }
+}
+
+/* Asegurar que los botones sigan siendo clicables */
+@media (max-width: 640px) {
+  .card-status-btn,
+  .btn-trade,
+  .btn-duplicate-action {
+    touch-action: manipulation; /* Mejor respuesta táctil */
+    -webkit-tap-highlight-color: transparent; /* Sin highlight en iOS */
+  }
+}
+
+/* Mejorar área de toque en elementos pequeños */
+@media (max-width: 479px) {
+  .btn-duplicate-action::before,
+  .btn-trade::before {
+    content: '';
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    bottom: -4px;
+    left: -4px;
+  }
+  
+  .btn-duplicate-action,
+  .btn-trade {
+    position: relative;
   }
 }
 
