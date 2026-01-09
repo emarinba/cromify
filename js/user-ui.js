@@ -106,15 +106,18 @@ const UserUI = {
     }
 
     container.innerHTML = collections.map(col => `
-      <div class="collection-card" data-id="${col.id}">
-        <div class="collection-header" style="background: ${col.album.color};">
-          <h4>${Utils.escapeHtml(col.album.name)}</h4>
-          <button class="btn-icon btn-leave-collection" 
-                  data-collection-id="${col.id}" 
-                  data-album-name="${Utils.escapeHtml(col.album.name)}"
-                  title="Desunirse de este álbum">
-            <i data-lucide="x"></i>
-          </button>
+      <div class="collection-card" data-id="${col.id}" style="--album-color: ${col.album.color};">
+        <div class="collection-header-modern">
+          <div class="collection-color-bar"></div>
+          <div class="collection-header-content">
+            <h4>${Utils.escapeHtml(col.album.name)}</h4>
+            <button class="btn-icon btn-leave-collection" 
+                    data-collection-id="${col.id}" 
+                    data-album-name="${Utils.escapeHtml(col.album.name)}"
+                    title="Desunirse de este álbum">
+              <i data-lucide="x"></i>
+            </button>
+          </div>
         </div>
         <div class="collection-body">
           <div class="collection-info">
@@ -432,9 +435,19 @@ const UserUI = {
           ` : ''}
           
           <!-- Controles de repetidos y cambiado -->
-          <div class="card-controls" ${card.status !== 'tengo' ? 'style="opacity: 0.3; pointer-events: none;"' : ''}>
-            <!-- Repetidos con botones +/- -->
-            <div class="card-duplicates-control">
+          <div class="card-controls">
+            <!-- Botón cambiado - SIEMPRE VISIBLE -->
+            <button class="btn-trade ${card.status === 'cambiado' ? 'active' : ''}"
+                    data-card-action="status" 
+                    data-card-id="${card.id}" 
+                    data-status="cambiado"
+                    title="Marcar como cambiado/pendiente">
+              <i data-lucide="repeat"></i>
+              <span>Cambiado</span>
+            </button>
+            
+            <!-- Repetidos con botones +/- (solo si tengo) -->
+            <div class="card-duplicates-control" ${card.status !== 'tengo' ? 'style="opacity: 0.4; pointer-events: none;"' : ''}>
               <button class="btn-duplicate-action minus" 
                       data-card-action="duplicate-minus" 
                       data-card-id="${card.id}"
@@ -456,17 +469,6 @@ const UserUI = {
                 <i data-lucide="plus"></i>
               </button>
             </div>
-            
-            <!-- Botón cambiado -->
-            <button class="btn-trade ${card.status === 'cambiado' ? 'active' : ''}"
-                    data-card-action="status" 
-                    data-card-id="${card.id}" 
-                    data-status="cambiado"
-                    ${card.status !== 'tengo' ? 'disabled' : ''}
-                    title="Para cambiar">
-              <i data-lucide="repeat"></i>
-              <span>Cambiar</span>
-            </button>
           </div>
         </div>
         
@@ -843,7 +845,7 @@ const UserUI = {
         }
       }
 
-      // Actualizar botón de cambiado
+      // Actualizar botón de cambiado - SIEMPRE DISPONIBLE
       const tradeBtn = cardElement.querySelector('.btn-trade');
       if (tradeBtn) {
         if (card.status === 'cambiado') {
@@ -851,9 +853,8 @@ const UserUI = {
         } else {
           tradeBtn.classList.remove('active');
         }
-        
-        // Habilitar/deshabilitar según estado
-        tradeBtn.disabled = card.status !== 'tengo';
+        // NUNCA deshabilitar el botón cambiado
+        tradeBtn.disabled = false;
       }
 
       // Actualizar contador de duplicados
@@ -874,15 +875,16 @@ const UserUI = {
         plusBtn.disabled = card.status !== 'tengo';
       }
 
-      // Mostrar/ocultar controles según estado
-      const controls = cardElement.querySelector('.card-controls');
-      if (controls) {
+      // Mostrar/ocultar controles de duplicados según estado
+      // El botón cambiado SIEMPRE está visible
+      const duplicatesControl = cardElement.querySelector('.card-duplicates-control');
+      if (duplicatesControl) {
         if (card.status === 'tengo') {
-          controls.style.opacity = '1';
-          controls.style.pointerEvents = 'auto';
+          duplicatesControl.style.opacity = '1';
+          duplicatesControl.style.pointerEvents = 'auto';
         } else {
-          controls.style.opacity = '0.3';
-          controls.style.pointerEvents = 'none';
+          duplicatesControl.style.opacity = '0.4';
+          duplicatesControl.style.pointerEvents = 'none';
         }
       }
     }

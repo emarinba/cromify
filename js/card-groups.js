@@ -51,6 +51,7 @@ const CardGroups = {
 
   /**
    * Agrupar cromos por equipo (categoría básica) o por categoría (resto)
+   * MANTENIENDO ORDEN NUMÉRICO GLOBAL
    */
   group(cards, categories) {
     if (!cards || cards.length === 0) return [];
@@ -62,9 +63,14 @@ const CardGroups = {
       c.is_basic === true
     );
 
-    const groups = new Map();
+    // PASO 1: Ordenar TODOS los cromos por número primero
+    const sortedCards = Utils.sortCards(cards);
 
-    cards.forEach(card => {
+    // PASO 2: Agrupar los cromos manteniendo el orden
+    const groups = new Map();
+    const groupOrder = []; // Para mantener el orden de aparición
+
+    sortedCards.forEach(card => {
       const category = categoryMap.get(card.categoryId);
       let groupKey, groupName, groupColor;
 
@@ -87,24 +93,18 @@ const CardGroups = {
           color: groupColor,
           cards: []
         });
+        groupOrder.push(groupKey); // Registrar orden de aparición
       }
 
       groups.get(groupKey).cards.push(card);
     });
 
-    // Convertir a array
-    const groupsArray = Array.from(groups.values());
+    // PASO 3: Crear array de grupos EN EL ORDEN DE APARICIÓN
+    const groupsArray = groupOrder.map(key => groups.get(key));
 
-    // Ordenar: equipos primero, luego por nombre
-    groupsArray.sort((a, b) => {
-      if (a.key.startsWith('team_') && !b.key.startsWith('team_')) return -1;
-      if (!a.key.startsWith('team_') && b.key.startsWith('team_')) return 1;
-      return a.name.localeCompare(b.name);
-    });
-
-    // Calcular estadísticas para cada grupo
+    // PASO 4: Calcular estadísticas para cada grupo
     groupsArray.forEach(group => {
-      group.cards = Utils.sortCards(group.cards);
+      // NO volver a ordenar aquí, ya vienen ordenados
       const total = group.cards.length;
       const owned = group.cards.filter(c => c.status === 'tengo').length;
       group.stats = {

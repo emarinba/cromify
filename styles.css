@@ -5644,7 +5644,7 @@ body.dark-mode .modal-toolbar {
 
 /* Botones laterales de estado */
 .card-status-btn {
-  flex: 0 0 48px;
+  flex: 0 0 32px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -5730,6 +5730,7 @@ body.dark-mode .modal-toolbar {
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-top: auto;
+  text-align: center;
 }
 
 /* Controles de repetidos y cambiado */
@@ -6111,5 +6112,868 @@ body.dark-mode .card-album-item.status-cambiado {
   color: var(--album-color);
   margin: 0;
   margin-bottom: var(--space-2);
+}
+
+
+/* =====================================================
+   CORRECCIONES FINALES - COLORES VIVOS Y CLAROS
+   ===================================================== */
+
+/* ELIMINAR DEGRADADO - Colores más vivos */
+.card-album-item::before {
+  display: none !important; /* Eliminar degradado completamente */
+}
+
+body.dark-mode .card-album-item::before {
+  display: none !important;
+}
+
+/* =====================================================
+   BOTONES DE ESTADO - BORDES PARA DIFERENCIAR ZONAS
+   ===================================================== */
+
+/* Botón izquierdo (FALTA) - con borde derecho */
+.card-status-btn.left {
+  border-right: 2px solid var(--border-light);
+}
+
+.card-status-btn.left:hover:not(.active) {
+  background: rgba(239, 68, 68, 0.08);
+  border-right-color: rgba(239, 68, 68, 0.3);
+}
+
+.card-status-btn.left.active {
+  background: #EF4444;
+  color: white;
+  border-right-color: transparent;
+}
+
+/* Botón derecho (TENGO) - con borde izquierdo */
+.card-status-btn.right {
+  border-left: 2px solid var(--border-light);
+}
+
+.card-status-btn.right:hover:not(.active) {
+  background: rgba(16, 185, 129, 0.08);
+  border-left-color: rgba(16, 185, 129, 0.3);
+}
+
+.card-status-btn.right.active {
+  background: #10B981;
+  color: white;
+  border-left-color: transparent;
+}
+
+/* Estados tenues cuando están marcados */
+.card-album-item.status-tengo {
+  background: #F0FDF4 !important; /* Verde más vivo */
+  border-color: #10B981;
+}
+
+.card-album-item.status-falta {
+  background: #FEF2F2 !important; /* Rojo más vivo */
+  border-color: #EF4444;
+}
+
+.card-album-item.status-cambiado {
+  background: #FFFBEB !important; /* Amarillo más vivo */
+  border-color: #F59E0B;
+}
+
+/* Dark mode - colores vivos */
+body.dark-mode .card-album-item.status-tengo {
+  background: rgba(16, 185, 129, 0.15) !important;
+  border-color: #10B981;
+}
+
+body.dark-mode .card-album-item.status-falta {
+  background: rgba(239, 68, 68, 0.15) !important;
+  border-color: #EF4444;
+}
+
+body.dark-mode .card-album-item.status-cambiado {
+  background: rgba(245, 158, 11, 0.15) !important;
+  border-color: #F59E0B;
+}
+
+/* =====================================================
+   GRID MÁS RESPONSIVO - SIN SUPERPOSICIONES
+   ===================================================== */
+
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: var(--space-4);
+  padding: var(--space-2);
+}
+
+@media (max-width: 1400px) {
+  .cards-grid {
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: var(--space-3);
+  }
+}
+
+@media (max-width: 1200px) {
+  .cards-grid {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: var(--space-3);
+  }
+}
+
+@media (max-width: 1024px) {
+  .cards-grid {
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: var(--space-3);
+  }
+}
+
+@media (max-width: 768px) {
+  .cards-grid {
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    gap: var(--space-2);
+  }
+}
+
+@media (max-width: 640px) {
+  .cards-grid {
+    grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
+    gap: var(--space-2);
+  }
+}
+
+@media (max-width: 480px) {
+  .cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-2);
+  }
+  
+  .card-album-item {
+    min-height: 170px;
+  }
+}
+
+@media (max-width: 375px) {
+  .cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  
+  .card-album-item {
+    min-height: 160px;
+  }
+}
+
+/* =====================================================
+   FLECHA SCROLL TO TOP - RECUPERAR ESTILOS
+   ===================================================== */
+
+#scrollTopBtn {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  width: 54px;
+  height: 54px;
+  background: var(--album-color, var(--primary));
+  color: white;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(20px) scale(0.9);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#scrollTopBtn.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+}
+
+#scrollTopBtn:hover {
+  transform: translateY(-6px) scale(1.05);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+#scrollTopBtn:active {
+  transform: translateY(-3px) scale(0.98);
+}
+
+#scrollTopBtn i {
+  width: 26px;
+  height: 26px;
+}
+
+@media (max-width: 768px) {
+  #scrollTopBtn {
+    bottom: 20px;
+    right: 20px;
+    width: 48px;
+    height: 48px;
+  }
+  
+  #scrollTopBtn i {
+    width: 22px;
+    height: 22px;
+  }
+}
+
+
+/* =====================================================
+   DASHBOARD MODERNO - CON COLORES DINÁMICOS
+   ===================================================== */
+
+.collection-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid var(--border);
+  position: relative;
+}
+
+.collection-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  border-color: var(--album-color);
+}
+
+/* Header moderno con barra de color */
+.collection-header-modern {
+  position: relative;
+  padding: var(--space-4);
+  background: linear-gradient(135deg, 
+    color-mix(in srgb, var(--album-color) 8%, var(--bg-card)) 0%,
+    var(--bg-card) 100%
+  );
+  border-bottom: 1px solid var(--border-light);
+}
+
+.collection-color-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--album-color);
+}
+
+.collection-header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.collection-header-content h4 {
+  color: var(--album-color);
+  margin: 0;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+}
+
+/* Body con más aire */
+.collection-body {
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.collection-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.collection-info i {
+  width: 16px;
+  height: 16px;
+}
+
+.collection-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.collection-actions .btn {
+  flex: 1;
+}
+
+/* Grid de colecciones - más aire */
+.collections-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: var(--space-5);
+  margin-top: var(--space-4);
+}
+
+@media (max-width: 768px) {
+  .collections-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
+}
+
+/* Botón de desunirse más elegante */
+.btn-leave-collection {
+  opacity: 0.6;
+  transition: all 0.2s ease;
+}
+
+.btn-leave-collection:hover {
+  opacity: 1;
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--danger);
+}
+
+/* Dark mode */
+body.dark-mode .collection-header-modern {
+  background: linear-gradient(135deg, 
+    color-mix(in srgb, var(--album-color) 15%, var(--bg-card)) 0%,
+    var(--bg-card) 100%
+  );
+}
+
+body.dark-mode .collection-card:hover {
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+}
+
+
+/* =====================================================
+   SOLUCIÓN DEFINITIVA - SIN SUPERPOSICIONES JAMÁS
+   ===================================================== */
+
+/* Resetear cualquier grid anterior */
+.cards-grid {
+  display: grid !important;
+  width: 100%;
+  padding: 16px;
+  box-sizing: border-box;
+  
+  /* Grid robusto con columnas fijas según ancho */
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) !important;
+  gap: 20px !important;
+  
+  /* Asegurar que no hay overflow */
+  overflow: visible;
+  position: relative;
+}
+
+/* Tarjetas con tamaño mínimo garantizado */
+.card-album-item {
+  min-width: 180px !important;
+  max-width: 100% !important;
+  min-height: 200px !important;
+  box-sizing: border-box !important;
+  
+  /* Asegurar que cada tarjeta ocupa su espacio */
+  grid-column: span 1 !important;
+  
+  /* Prevenir superposiciones */
+  position: relative !important;
+  z-index: 1 !important;
+  
+  /* Asegurar que no se sale del grid */
+  overflow: hidden !important;
+}
+
+.card-album-item:hover {
+  z-index: 10 !important;
+}
+
+/* Breakpoints ultra seguros - DE MÁS GRANDE A MÁS PEQUEÑO */
+
+/* Escritorio grande: 5-6 columnas */
+@media (min-width: 1600px) {
+  .cards-grid {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)) !important;
+    gap: 24px !important;
+  }
+}
+
+/* Escritorio: 4-5 columnas */
+@media (min-width: 1200px) and (max-width: 1599px) {
+  .cards-grid {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) !important;
+    gap: 20px !important;
+  }
+}
+
+/* Laptop: 3-4 columnas */
+@media (min-width: 900px) and (max-width: 1199px) {
+  .cards-grid {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
+    gap: 18px !important;
+  }
+  
+  .card-album-item {
+    min-width: 160px !important;
+    min-height: 190px !important;
+  }
+}
+
+/* Tablet: 2-3 columnas */
+@media (min-width: 600px) and (max-width: 899px) {
+  .cards-grid {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)) !important;
+    gap: 16px !important;
+    padding: 12px !important;
+  }
+  
+  .card-album-item {
+    min-width: 150px !important;
+    min-height: 180px !important;
+  }
+}
+
+/* Móvil grande: EXACTAMENTE 2 COLUMNAS */
+@media (min-width: 400px) and (max-width: 599px) {
+  .cards-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px !important;
+    padding: 12px !important;
+  }
+  
+  .card-album-item {
+    min-width: 0 !important; /* Permitir que se ajuste */
+    width: 100% !important;
+    min-height: 170px !important;
+  }
+  
+  /* Texto más pequeño en móvil */
+  .card-number {
+    font-size: 18px !important;
+  }
+  
+  .card-player-name {
+    font-size: 13px !important;
+  }
+  
+  .card-team {
+    font-size: 11px !important;
+  }
+  
+  .card-status-btn {
+    flex: 0 0 42px !important;
+  }
+}
+
+/* Móvil pequeño: EXACTAMENTE 2 COLUMNAS MÁS COMPACTAS */
+@media (max-width: 399px) {
+  .cards-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+    padding: 10px !important;
+  }
+  
+  .card-album-item {
+    min-width: 0 !important;
+    width: 100% !important;
+    min-height: 160px !important;
+  }
+  
+  .card-number {
+    font-size: 16px !important;
+  }
+  
+  .card-player-name {
+    font-size: 12px !important;
+    -webkit-line-clamp: 1 !important; /* Solo 1 línea */
+  }
+  
+  .card-team {
+    font-size: 10px !important;
+    display: none; /* Ocultar equipo para ahorrar espacio */
+  }
+  
+  .card-status-btn {
+    flex: 0 0 38px !important;
+  }
+  
+  .card-status-btn i {
+    width: 18px !important;
+    height: 18px !important;
+  }
+  
+  .card-content {
+    padding: 8px !important;
+  }
+  
+  .btn-duplicate-action {
+    width: 24px !important;
+    height: 24px !important;
+  }
+  
+  .duplicates-display {
+    padding: 4px 8px !important;
+    min-width: 50px !important;
+  }
+}
+
+/* IMPORTANTE: Prevenir overflow del contenedor padre */
+.container {
+  overflow-x: hidden !important;
+  width: 100% !important;
+  max-width: 100vw !important;
+  box-sizing: border-box !important;
+}
+
+#cardsContainer {
+  overflow-x: hidden !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+
+/* =====================================================
+   BOTÓN CAMBIADO - ESTADO INDEPENDIENTE
+   ===================================================== */
+
+/* Layout de controles - cambiado arriba, repetidos abajo */
+.card-controls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: auto;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border-light);
+}
+
+/* Botón cambiado - SIEMPRE visible y accesible */
+.btn-trade {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  padding: 8px 12px;
+  background: var(---cambiado);
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text);
+  
+  /* NUNCA deshabilitado */
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+.btn-trade:hover {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: var(--cambiado);
+  color: var(--cambiado);
+  transform: translateY(-1px);
+}
+
+.btn-trade.active {
+  background: var(--cambiado);
+  color: white;
+  border-color: var(--cambiado);
+  font-weight: var(--font-weight-bold);
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+}
+
+.btn-trade i {
+  width: 16px;
+  height: 16px;
+}
+
+/* Estado cambiado en la tarjeta */
+.card-album-item.status-cambiado {
+  background: #FFFBEB !important;
+  border-color: #F59E0B;
+  box-shadow: var(--shadow-sm);
+}
+
+body.dark-mode .card-album-item.status-cambiado {
+  background: rgba(245, 158, 11, 0.15) !important;
+  border-color: #F59E0B;
+}
+
+/* Asegurar que los controles de duplicados pueden deshabilitarse independientemente */
+.card-duplicates-control {
+  transition: opacity 0.2s ease;
+}
+
+/* Responsive - botón más compacto en móvil */
+@media (max-width: 480px) {
+  .btn-trade {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+  
+  .btn-trade span {
+    display: none; /* Ocultar texto, solo icono */
+  }
+  
+  .btn-trade i {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+
+/* =====================================================
+   SCROLL TO TOP - RECUPERADO Y FUNCIONAL
+   ===================================================== */
+
+.scroll-top-btn,
+#scrollTopBtn,
+#scrollToTopBtn {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  width: 54px;
+  height: 54px;
+  background: var(--album-color, var(--primary));
+  color: white;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(20px) scale(0.9);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.scroll-top-btn.visible,
+.scroll-top-btn.show,
+#scrollTopBtn.visible,
+#scrollTopBtn.show,
+#scrollToTopBtn.visible,
+#scrollToTopBtn.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+.scroll-top-btn:hover,
+#scrollTopBtn:hover,
+#scrollToTopBtn:hover {
+  transform: translateY(-6px) scale(1.05);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.scroll-top-btn:active,
+#scrollTopBtn:active,
+#scrollToTopBtn:active {
+  transform: translateY(-3px) scale(0.98);
+}
+
+.scroll-top-btn i,
+#scrollTopBtn i,
+#scrollToTopBtn i {
+  width: 26px;
+  height: 26px;
+  stroke-width: 2.5;
+}
+
+@media (max-width: 768px) {
+  .scroll-top-btn,
+  #scrollTopBtn,
+  #scrollToTopBtn {
+    bottom: 20px;
+    right: 20px;
+    width: 48px;
+    height: 48px;
+  }
+  
+  .scroll-top-btn i,
+  #scrollTopBtn i,
+  #scrollToTopBtn i {
+    width: 22px;
+    height: 22px;
+  }
+}
+
+
+/* =====================================================
+   VISTA LISTA - ESTADOS VISUALES MEJORADOS
+   ===================================================== */
+
+/* Fondos sutiles según estado */
+.card-list-item.status-tengo {
+  background: #F0FDF4 !important; /* Verde suave */
+  border-left: 4px solid #10B981;
+}
+
+.card-list-item.status-falta {
+  background: #FEF2F2 !important; /* Rojo suave */
+  border-left: 4px solid #EF4444;
+}
+
+.card-list-item.status-cambiado {
+  background: #FFFBEB !important; /* Amarillo/naranja suave */
+  border-left: 4px solid #F59E0B;
+}
+
+/* Dark mode - fondos sutiles con opacidad */
+body.dark-mode .card-list-item.status-tengo {
+  background: rgba(16, 185, 129, 0.12) !important;
+  border-left-color: #10B981;
+}
+
+body.dark-mode .card-list-item.status-falta {
+  background: rgba(239, 68, 68, 0.12) !important;
+  border-left-color: #EF4444;
+}
+
+body.dark-mode .card-list-item.status-cambiado {
+  background: rgba(245, 158, 11, 0.12) !important;
+  border-left-color: #F59E0B;
+}
+
+/* Hover más sutil */
+.card-list-item:hover {
+  border-color: var(--album-color);
+  transform: translateX(4px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* Botones de estado en lista - COLORES CLAROS */
+.btn-status {
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: 2px solid transparent;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 90px;
+  text-align: center;
+}
+
+/* Estado: Falta */
+.btn-status[data-status="falta"] {
+  background: rgba(239, 68, 68, 0.1);
+  color: #DC2626;
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.btn-status[data-status="falta"]:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: #EF4444;
+}
+
+.btn-status[data-status="falta"].active {
+  background: #EF4444;
+  color: white;
+  border-color: #EF4444;
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.3);
+}
+
+/* Estado: Tengo */
+.btn-status[data-status="tengo"] {
+  background: rgba(16, 185, 129, 0.1);
+  color: #059669;
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.btn-status[data-status="tengo"]:hover {
+  background: rgba(16, 185, 129, 0.2);
+  border-color: #10B981;
+}
+
+.btn-status[data-status="tengo"].active {
+  background: #10B981;
+  color: white;
+  border-color: #10B981;
+  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3);
+}
+
+/* Estado: Cambiado */
+.btn-status[data-status="cambiado"] {
+  background: rgba(245, 158, 11, 0.1);
+  color: #D97706;
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.btn-status[data-status="cambiado"]:hover {
+  background: rgba(245, 158, 11, 0.2);
+  border-color: #F59E0B;
+}
+
+.btn-status[data-status="cambiado"].active {
+  background: #F59E0B;
+  color: white;
+  border-color: #F59E0B;
+  box-shadow: 0 2px 6px rgba(245, 158, 11, 0.3);
+}
+
+/* Dark mode - botones */
+body.dark-mode .btn-status[data-status="falta"] {
+  background: rgba(239, 68, 68, 0.15);
+  color: #FCA5A5;
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+body.dark-mode .btn-status[data-status="falta"].active {
+  background: #EF4444;
+  color: white;
+}
+
+body.dark-mode .btn-status[data-status="tengo"] {
+  background: rgba(16, 185, 129, 0.15);
+  color: #6EE7B7;
+  border-color: rgba(16, 185, 129, 0.4);
+}
+
+body.dark-mode .btn-status[data-status="tengo"].active {
+  background: #10B981;
+  color: white;
+}
+
+body.dark-mode .btn-status[data-status="cambiado"] {
+  background: rgba(245, 158, 11, 0.15);
+  color: #FCD34D;
+  border-color: rgba(245, 158, 11, 0.4);
+}
+
+body.dark-mode .btn-status[data-status="cambiado"].active {
+  background: #F59E0B;
+  color: white;
+}
+
+/* Asegurar contraste en textos */
+.card-list-item.status-tengo .card-list-number,
+.card-list-item.status-tengo .card-list-name {
+  color: var(--text) !important;
+}
+
+.card-list-item.status-falta .card-list-number,
+.card-list-item.status-falta .card-list-name {
+  color: var(--text) !important;
+}
+
+.card-list-item.status-cambiado .card-list-number,
+.card-list-item.status-cambiado .card-list-name {
+  color: var(--text) !important;
+}
+
+/* Responsive - botones más compactos en móvil */
+@media (max-width: 768px) {
+  .btn-status {
+    min-width: 70px;
+    padding: 5px 10px;
+    font-size: 12px;
+  }
 }
 
