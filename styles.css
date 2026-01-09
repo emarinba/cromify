@@ -278,9 +278,30 @@ h6 { font-size: var(--font-size-base); }
 }
 
 .container {
-    max-width: 1200px;
+    max-width: 1400px;
     margin: 0 auto;
-    padding: var(--spacing);
+    padding: var(--space-6) var(--space-4);
+}
+
+/* Contenedor principal con márgenes mejorados */
+.main-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: var(--space-6) var(--space-6);
+}
+
+@media (max-width: 768px) {
+    .container,
+    .main-container {
+        padding: var(--space-4) var(--space-3);
+    }
+}
+
+@media (max-width: 480px) {
+    .container,
+    .main-container {
+        padding: var(--space-3) var(--space-2);
+    }
 }
 
 /* ========================================
@@ -3719,6 +3740,16 @@ body.dark-mode .card-item.falta {
   color: white !important;
 }
 
+.toast.info {
+  border-left-color: var(--info) !important;
+}
+
+.toast.info::before {
+  content: 'ℹ' !important;
+  background: var(--info) !important;
+  color: white !important;
+}
+
 @keyframes toast-out {
   to {
     transform: translateX(500px) !important;
@@ -4438,458 +4469,18 @@ body.dark-mode .stat-icon {
 body.dark-mode #collectionTitle::before {
   box-shadow: 0 0 16px var(--album-color);
 }
-/* ============================================================================
-   AGRUPACIONES DE CROMOS - Accordion groups
-   ============================================================================ */
 
-/* Controles de expandir/colapsar todos */
-.groups-controls {
-  display: flex;
-  gap: 16px;
-  margin-bottom: 24px;
-  padding: 12px 0;
-}
+/* =====================================================
+   AGRUPACIONES DE CROMOS - SISTEMA UNIFICADO
+   ===================================================== */
 
-.groups-controls .btn-text {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  background: none;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  color: var(--text-secondary);
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.groups-controls .btn-text:hover {
-  background: var(--bg-secondary);
-  border-color: var(--album-color);
-  color: var(--album-color);
-}
-
-.groups-controls .btn-text i {
-  width: 16px;
-  height: 16px;
-}
-
-/* Contenedor de grupos */
-.cards-groups-container {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-/* Grupo individual */
-.card-group {
-  background: var(--bg-card);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  box-shadow: var(--shadow-sm);
-  transition: all 0.3s ease;
-}
-
-.card-group:hover {
-  box-shadow: var(--shadow-md);
-}
-
-/* Header del grupo (clickable) */
-.group-header {
-  display: flex;
-  align-items: center;
-  padding: 20px 24px;
-  background: var(--bg-secondary);
-  cursor: pointer;
-  user-select: none;
-  transition: all 0.2s ease;
-  border-left: 4px solid transparent;
-}
-
-.group-header:hover {
-  background: var(--bg-card);
-  border-left-color: var(--album-color);
-}
-
-.group-header:active {
-  background: var(--bg-secondary);
-}
-
-.card-group.expanded .group-header {
-  border-left-color: var(--album-color);
-}
-
-/* Contenido del header */
-.group-header-content {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  width: 100%;
-}
-
-/* Chevron animado */
-.group-chevron {
-  width: 20px;
-  height: 20px;
-  color: var(--text-secondary);
-  transition: transform 0.3s ease, color 0.2s ease;
-  flex-shrink: 0;
-}
-
-.card-group.expanded .group-chevron {
-  transform: rotate(0deg);
-  color: var(--album-color);
-}
-
-.card-group.collapsed .group-chevron {
-  transform: rotate(-90deg);
-}
-
-/* Indicador de color */
-.group-indicator {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex-shrink: 0;
-  box-shadow: 0 0 8px currentColor;
-}
-
-/* Título del grupo */
-.group-title {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: var(--text);
-  margin: 0;
-  flex: 1;
-}
-
-.card-group.expanded .group-title {
-  color: var(--album-color);
-}
-
-/* Contador de cromos */
-.group-count {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--text-secondary);
-  background: var(--bg-card);
-  padding: 4px 12px;
-  border-radius: var(--radius-full);
-}
-
-.card-group.expanded .group-count {
-  background: color-mix(in srgb, var(--album-color) 15%, var(--bg-card));
-  color: var(--album-color);
-}
-
-/* Contenido del grupo */
-.group-content {
-  overflow: hidden;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.group-content.show {
-  max-height: 100000px; /* Valor alto para permitir expansión */
-  opacity: 1;
-  padding: 24px;
-}
-
-.group-content.hide {
-  max-height: 0;
-  opacity: 0;
-  padding: 0 24px;
-}
-
-/* Grid dentro del grupo */
-.group-content .cards-album-grid {
-  padding: 0 !important;
-  margin: 0;
-}
-
-/* Lista dentro del grupo */
-.group-content .cards-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-/* Animación de apertura */
-@keyframes expandGroup {
-  from {
-    max-height: 0;
-    opacity: 0;
-  }
-  to {
-    max-height: 10000px;
-    opacity: 1;
-  }
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .groups-controls {
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .groups-controls .btn-text {
-    justify-content: center;
-    width: 100%;
-  }
-
-  .group-header {
-    padding: 16px 20px;
-  }
-
-  .group-header-content {
-    gap: 12px;
-  }
-
-  .group-title {
-    font-size: 1rem;
-  }
-
-  .group-count {
-    font-size: 0.75rem;
-    padding: 3px 10px;
-  }
-
-  .group-content.show {
-    padding: 20px;
-  }
-}
-
-@media (max-width: 480px) {
-  .group-header {
-    padding: 12px 16px;
-  }
-
-  .group-header-content {
-    gap: 8px;
-  }
-
-  .group-title {
-    font-size: 0.938rem;
-  }
-
-  .group-content.show {
-    padding: 16px;
-  }
-}
-
-/* Dark mode */
-body.dark-mode .group-header {
-  background: var(--bg-secondary);
-}
-
-body.dark-mode .group-header:hover {
-  background: color-mix(in srgb, var(--bg-card) 80%, var(--album-color) 10%);
-}
-
-body.dark-mode .group-count {
-  background: var(--bg-secondary);
-}
-
-body.dark-mode .card-group.expanded .group-count {
-  background: color-mix(in srgb, var(--album-color) 20%, var(--bg-secondary));
-}
-/* ============================================================================
-   AGRUPACIONES - CSS ACTUALIZADO con contadores
-   ============================================================================ */
-
-/* Contenedor de stats en el header */
-.group-stats {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-left: auto;
-}
-
-/* Contador principal: X / Y */
-.group-progress {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--text-secondary);
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 6px 12px;
-  background: var(--bg-card);
-  border-radius: var(--radius);
-  border: 1px solid var(--border);
-}
-
-.group-progress strong {
-  color: var(--album-color);
-  font-size: 1rem;
-}
-
-/* Porcentaje */
-.group-percentage {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--text-secondary);
-  padding: 6px 12px;
-  background: var(--bg-secondary);
-  border-radius: var(--radius);
-  min-width: 50px;
-  text-align: center;
-}
-
-/* Cuando el grupo está expandido */
-.card-group.expanded .group-progress {
-  background: color-mix(in srgb, var(--album-color) 10%, var(--bg-card));
-  border-color: color-mix(in srgb, var(--album-color) 30%, transparent);
-}
-
-.card-group.expanded .group-percentage {
-  background: color-mix(in srgb, var(--album-color) 15%, var(--bg-card));
-  color: var(--album-color);
-}
-
-/* Eliminar el contador viejo */
-.group-count {
-  display: none;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .group-stats {
-    gap: 8px;
-  }
-
-  .group-progress {
-    font-size: 0.75rem;
-    padding: 4px 10px;
-  }
-
-  .group-progress strong {
-    font-size: 0.875rem;
-  }
-
-  .group-percentage {
-    font-size: 0.75rem;
-    padding: 4px 10px;
-    min-width: 45px;
-  }
-}
-
-@media (max-width: 480px) {
-  .group-header-content {
-    flex-wrap: wrap;
-  }
-
-  .group-stats {
-    width: 100%;
-    justify-content: flex-end;
-    margin-top: 8px;
-    margin-left: 0;
-  }
-}
-
-/* Dark mode */
-body.dark-mode .group-progress {
-  background: var(--bg-secondary);
-  border-color: var(--border);
-}
-
-body.dark-mode .card-group.expanded .group-progress {
-  background: color-mix(in srgb, var(--album-color) 15%, var(--bg-secondary));
-}
-
-body.dark-mode .card-group.expanded .group-percentage {
-  background: color-mix(in srgb, var(--album-color) 20%, var(--bg-secondary));
-}
-/* ============================================================================
-   SCROLL TO TOP - Botón flotante
-   ============================================================================ */
-
-.scroll-to-top-btn {
-  position: fixed;
-  bottom: 32px;
-  right: 32px;
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background: var(--album-color, var(--accent));
-  color: white;
-  border: none;
-  box-shadow: var(--shadow-lg);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(20px) scale(0.8);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.scroll-to-top-btn.visible {
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0) scale(1);
-}
-
-.scroll-to-top-btn:hover {
-  transform: translateY(-4px) scale(1.05);
-  box-shadow: var(--shadow-xl);
-}
-
-.scroll-to-top-btn:active {
-  transform: translateY(-2px) scale(1);
-}
-
-.scroll-to-top-btn i,
-.scroll-to-top-btn svg {
-  width: 24px;
-  height: 24px;
-  stroke-width: 2.5;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .scroll-to-top-btn {
-    bottom: 24px;
-    right: 24px;
-    width: 48px;
-    height: 48px;
-  }
-
-  .scroll-to-top-btn i,
-  .scroll-to-top-btn svg {
-    width: 20px;
-    height: 20px;
-  }
-}
-
-@media (max-width: 480px) {
-  .scroll-to-top-btn {
-    bottom: 16px;
-    right: 16px;
-    width: 44px;
-    height: 44px;
-  }
-}
-
-/* Dark mode */
-body.dark-mode .scroll-to-top-btn {
-  background: var(--album-color, var(--accent));
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-}
-/* ============================================================================
-   GRUPOS - Sistema desde cero
-   ============================================================================ */
-
-/* Toolbar */
+/* Toolbar de controles */
 .groups-toolbar {
   display: flex;
   gap: 12px;
   margin-bottom: 24px;
   padding: 16px 0;
+  flex-wrap: wrap;
 }
 
 .btn-ghost {
@@ -4904,13 +4495,18 @@ body.dark-mode .scroll-to-top-btn {
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
 }
 
 .btn-ghost:hover {
   background: var(--bg-secondary);
   border-color: var(--album-color);
   color: var(--album-color);
+  transform: translateY(-1px);
+}
+
+.btn-ghost:active {
+  transform: translateY(0);
 }
 
 .btn-ghost i {
@@ -4931,14 +4527,14 @@ body.dark-mode .scroll-to-top-btn {
   border-radius: 12px;
   border: 1px solid var(--border);
   overflow: hidden;
-  transition: box-shadow 0.2s;
+  transition: all 0.2s ease;
 }
 
 .group:hover {
   box-shadow: var(--shadow-md);
 }
 
-/* Header del grupo */
+/* Header del grupo (botón clickeable) */
 .group-header {
   width: 100%;
   display: flex;
@@ -4948,7 +4544,7 @@ body.dark-mode .scroll-to-top-btn {
   background: var(--bg-secondary);
   border: none;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.2s ease;
   text-align: left;
 }
 
@@ -4961,37 +4557,47 @@ body.dark-mode .scroll-to-top-btn {
   border-bottom: 1px solid var(--border);
 }
 
+/* Icono de chevron */
 .group-icon {
   width: 20px;
   height: 20px;
   color: var(--text-secondary);
-  transition: transform 0.2s, color 0.2s;
+  transition: all 0.2s ease;
   flex-shrink: 0;
 }
 
 .group.expanded .group-icon {
   color: var(--album-color);
+  transform: rotate(0deg);
 }
 
+.group.collapsed .group-icon {
+  transform: rotate(-90deg);
+}
+
+/* Punto de color */
 .group-dot {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   flex-shrink: 0;
 }
 
+/* Nombre del grupo */
 .group-name {
   flex: 1;
   font-size: 18px;
   font-weight: 600;
   color: var(--text);
   margin: 0;
+  transition: color 0.2s ease;
 }
 
 .group.expanded .group-name {
   color: var(--album-color);
 }
 
+/* Contador de cromos */
 .group-counter {
   display: flex;
   align-items: center;
@@ -5000,21 +4606,400 @@ body.dark-mode .scroll-to-top-btn {
   color: var(--text-secondary);
 }
 
-.group-counter strong {
-  font-size: 16px;
+.group-progress {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.group-progress strong {
+  font-size: 18px;
+  font-weight: 700;
   color: var(--album-color);
 }
 
 .group-percent {
-  padding: 4px 10px;
+  padding: 6px 12px;
   background: var(--bg-secondary);
   border-radius: 12px;
   font-weight: 600;
+  font-size: 13px;
+  transition: all 0.2s ease;
 }
 
 .group.expanded .group-percent {
   background: color-mix(in srgb, var(--album-color) 15%, var(--bg-card));
   color: var(--album-color);
+}
+
+/* Body del grupo */
+.group-body {
+  padding: 24px;
+  animation: slideDown 0.3s ease;
+}
+
+.group-body[hidden] {
+  display: none;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Grid de cromos dentro del grupo - VISTA ÁLBUM */
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 16px;
+  padding: 0;
+}
+
+/* Vista lista de cromos */
+.cards-list-view {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.card-list-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  border: 2px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.card-list-item:hover {
+  border-color: var(--album-color);
+  background: var(--bg-card);
+}
+
+.card-list-item.status-tengo {
+  border-left: 4px solid var(--success);
+}
+
+.card-list-item.status-falta {
+  border-left: 4px solid var(--danger);
+}
+
+.card-list-item.status-cambiado {
+  border-left: 4px solid var(--warning);
+}
+
+.card-list-number {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--album-color);
+  min-width: 50px;
+  text-align: center;
+}
+
+.card-list-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.card-list-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.card-list-team {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.card-list-category {
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+.card-list-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-status {
+  padding: 8px 12px;
+  background: var(--bg-tertiary);
+  border: 2px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-status i {
+  width: 18px;
+  height: 18px;
+  color: var(--text-secondary);
+}
+
+.btn-status:hover {
+  background: var(--bg-card);
+  border-color: var(--album-color);
+}
+
+.btn-status:hover i {
+  color: var(--album-color);
+}
+
+.btn-status.active {
+  background: var(--album-color);
+  border-color: var(--album-color);
+}
+
+.btn-status.active i {
+  color: white;
+}
+
+.input-duplicates {
+  width: 60px;
+  padding: 8px;
+  text-align: center;
+  border: 2px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-tertiary);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.input-duplicates:focus {
+  outline: none;
+  border-color: var(--album-color);
+  background: var(--bg-card);
+}
+
+.input-duplicates:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* =====================================================
+   ESTILOS PARA CROMOS DE ADMIN
+   ===================================================== */
+
+.card-admin-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  border: 2px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.card-admin-item:hover {
+  border-color: var(--album-color);
+  background: var(--bg-card);
+  box-shadow: var(--shadow-sm);
+}
+
+.card-admin-number {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--album-color);
+  min-width: 50px;
+  text-align: center;
+  padding: 8px;
+  background: color-mix(in srgb, var(--album-color) 10%, var(--bg-card));
+  border-radius: 6px;
+}
+
+.card-admin-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.card-admin-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.card-admin-team {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.card-admin-category {
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.card-admin-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.btn-icon-small {
+  padding: 8px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-icon-small i {
+  width: 16px;
+  height: 16px;
+  color: var(--text-secondary);
+}
+
+.btn-icon-small:hover {
+  background: var(--album-color);
+  border-color: var(--album-color);
+  transform: translateY(-2px);
+}
+
+.btn-icon-small:hover i {
+  color: white;
+}
+
+/* =====================================================
+   RESPONSIVE - AGRUPACIONES
+   ===================================================== */
+
+@media (max-width: 768px) {
+  .groups-toolbar {
+    flex-direction: column;
+  }
+  
+  .btn-ghost {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .group-header {
+    padding: 16px;
+    gap: 8px;
+  }
+  
+  .group-name {
+    font-size: 16px;
+  }
+  
+  .group-counter {
+    font-size: 12px;
+  }
+  
+  .group-body {
+    padding: 16px;
+  }
+  
+  .cards-grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 12px;
+  }
+  
+  .card-list-item {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  
+  .card-list-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+@media (max-width: 480px) {
+  .group-header {
+    padding: 12px;
+  }
+  
+  .group-name {
+    font-size: 14px;
+  }
+  
+  .group-percent {
+    font-size: 11px;
+    padding: 4px 8px;
+  }
+  
+  .cards-grid {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 8px;
+  }
+}
+
+/* =====================================================
+   DARK MODE - AGRUPACIONES
+   ===================================================== */
+
+body.dark-mode .group {
+  background: var(--bg-card);
+  border-color: var(--border);
+}
+
+body.dark-mode .group-header {
+  background: var(--bg-secondary);
+}
+
+body.dark-mode .group-header:hover {
+  background: var(--bg-tertiary);
+}
+
+body.dark-mode .group.expanded .group-header {
+  background: var(--bg-tertiary);
+}
+
+body.dark-mode .card-list-item {
+  background: var(--bg-tertiary);
+}
+
+body.dark-mode .card-list-item:hover {
+  background: var(--bg-secondary);
+}
+
+body.dark-mode .btn-status {
+  background: var(--bg-secondary);
+}
+
+body.dark-mode .btn-status:hover {
+  background: var(--bg-tertiary);
+}
+
+body.dark-mode .input-duplicates {
+  background: var(--bg-secondary);
+}
+
+body.dark-mode .card-admin-item {
+  background: var(--bg-tertiary);
+}
+
+body.dark-mode .card-admin-item:hover {
+  background: var(--bg-secondary);
+}
+
+body.dark-mode .card-admin-number {
+  background: color-mix(in srgb, var(--album-color) 20%, var(--bg-secondary));
 }
 
 /* Body del grupo */
@@ -5113,3 +5098,382 @@ body.dark-mode .group-header {
 body.dark-mode .group.expanded .group-header {
   background: var(--bg-card);
 }
+
+/* ============================================================================
+   VISTA LISTA vs ÁLBUM
+   ============================================================================ */
+
+/* Vista álbum (por defecto) */
+.view-album .cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 20px;
+}
+
+/* Vista lista */
+.view-list .cards-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.view-list .card-album-item {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding: 12px 16px;
+  max-width: 100%;
+  height: auto;
+  min-height: 60px;
+}
+
+.view-list .album-card-content {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+}
+
+.view-list .album-card-number {
+  font-size: 16px;
+  min-width: 60px;
+}
+
+.view-list .album-card-name {
+  font-size: 14px;
+  flex: 1;
+}
+
+.view-list .album-card-team {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.view-list .album-bottom-controls {
+  flex-direction: row;
+  gap: 12px;
+  margin: 0;
+}
+
+.view-list .album-side-btn {
+  position: static;
+  width: 40px;
+  height: 40px;
+}
+
+/* =====================================================
+   ESTILOS PARA BOTÓN DE DESUNIRSE
+   ===================================================== */
+
+.collection-card .collection-header {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-4);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+.collection-card .collection-header h4 {
+  flex: 1;
+  margin: 0;
+  color: white;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+}
+
+.btn-leave-collection {
+  padding: var(--space-2);
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(10px);
+}
+
+.btn-leave-collection:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: scale(1.1);
+}
+
+.btn-leave-collection i {
+  width: 18px;
+  height: 18px;
+  color: white;
+}
+
+.collection-actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+body.dark-mode .btn-leave-collection {
+  background: rgba(0, 0, 0, 0.3);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+body.dark-mode .btn-leave-collection:hover {
+  background: rgba(0, 0, 0, 0.5);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+
+/* =====================================================
+   ESTILOS PARA LISTADOS DE CROMOS (FALTANTES/REPETIDOS)
+   ===================================================== */
+
+.modal-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-4);
+  padding: var(--space-3);
+  background: var(--bg-secondary);
+  border-radius: var(--radius);
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.btn-group {
+  display: flex;
+  gap: 0;
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.btn-group .btn {
+  border-radius: 0;
+  border: none;
+  border-right: 1px solid var(--border);
+}
+
+.btn-group .btn:last-child {
+  border-right: none;
+}
+
+.btn-group .btn.active {
+  background: var(--album-color);
+  color: white;
+}
+
+.cards-list-container {
+  max-height: 500px;
+  overflow-y: auto;
+  padding: var(--space-2);
+  background: var(--bg);
+  border-radius: var(--radius);
+}
+
+/* Lista desagrupada */
+.ungrouped-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.list-count {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  border-left: 4px solid var(--album-color);
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.list-count i {
+  width: 20px;
+  height: 20px;
+  color: var(--album-color);
+}
+
+.list-count strong {
+  color: var(--album-color);
+  font-weight: var(--font-weight-bold);
+}
+
+.numbers-text {
+  padding: var(--space-4);
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  line-height: 1.8;
+  word-wrap: break-word;
+  font-size: var(--font-size-sm);
+  font-family: 'Courier New', monospace;
+  color: var(--text);
+}
+
+/* Lista agrupada */
+.grouped-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.list-group {
+  padding: var(--space-3);
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  transition: all 0.2s ease;
+}
+
+.list-group:hover {
+  border-color: var(--album-color);
+  box-shadow: var(--shadow-sm);
+}
+
+.list-group-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--border);
+  font-size: var(--font-size-base);
+}
+
+.list-group-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.list-group-count {
+  margin-left: auto;
+  padding: 4px 10px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-secondary);
+}
+
+.list-group-numbers {
+  line-height: 1.8;
+  word-wrap: break-word;
+  font-size: var(--font-size-sm);
+  font-family: 'Courier New', monospace;
+  color: var(--text-secondary);
+}
+
+/* Scroll personalizado para listas */
+.cards-list-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.cards-list-container::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+  border-radius: var(--radius);
+}
+
+.cards-list-container::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: var(--radius);
+}
+
+.cards-list-container::-webkit-scrollbar-thumb:hover {
+  background: var(--album-color);
+}
+
+/* =====================================================
+   ESTILOS PARA HEADER ACTIONS (BOTONES EN HEADER)
+   ===================================================== */
+
+.view-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-6);
+}
+
+.view-header h2 {
+  flex: 1;
+  margin: 0;
+}
+
+.header-actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+/* =====================================================
+   MODAL LARGE (para listados)
+   ===================================================== */
+
+.modal-content.modal-large {
+  max-width: 800px;
+}
+
+/* =====================================================
+   RESPONSIVE - LISTADOS
+   ===================================================== */
+
+@media (max-width: 768px) {
+  .modal-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .btn-group {
+    width: 100%;
+  }
+  
+  .btn-group .btn {
+    flex: 1;
+  }
+  
+  .modal-toolbar .btn {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .view-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .header-actions {
+    width: 100%;
+  }
+  
+  .header-actions .btn {
+    flex: 1;
+  }
+}
+
+/* =====================================================
+   DARK MODE - LISTADOS
+   ===================================================== */
+
+body.dark-mode .cards-list-container {
+  background: var(--bg-secondary);
+}
+
+body.dark-mode .ungrouped-list,
+body.dark-mode .list-group {
+  background: var(--bg-tertiary);
+}
+
+body.dark-mode .numbers-text,
+body.dark-mode .list-group-numbers {
+  color: var(--text);
+}
+
+body.dark-mode .modal-toolbar {
+  background: var(--bg-tertiary);
+}
+

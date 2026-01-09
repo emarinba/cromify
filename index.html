@@ -195,6 +195,10 @@
                                 <i data-lucide="download"></i>
                                 Importar
                             </button>
+                            <button id="btnBulkCategory" class="btn btn-outline">
+                                <i data-lucide="layers"></i>
+                                Cambio Masivo
+                            </button>
                         </div>
 
                         <div id="masterCardsList"></div>
@@ -243,6 +247,16 @@
                         Volver
                     </button>
                     <h2 id="collectionTitle">Mi Colección</h2>
+                    <div class="header-actions">
+                        <button id="btnShowMissing" class="btn btn-secondary">
+                            <i data-lucide="list-x"></i>
+                            Faltantes
+                        </button>
+                        <button id="btnShowDuplicates" class="btn btn-secondary">
+                            <i data-lucide="layers"></i>
+                            Repetidos
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Estadísticas -->
@@ -392,17 +406,121 @@
         </div>
     </div>
 
+    <!-- Modal: Cambio Masivo de Categoría (Admin) -->
+    <div id="modalBulkCategory" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Cambio Masivo de Categoría</h3>
+                <button class="btn-close" data-close="modalBulkCategory">×</button>
+            </div>
+            <form id="formBulkCategory">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Desde número</label>
+                        <input type="text" id="bulkFromNumber" required placeholder="Ej: 1">
+                    </div>
+                    <div class="form-group">
+                        <label>Hasta número</label>
+                        <input type="text" id="bulkToNumber" required placeholder="Ej: 20">
+                    </div>
+                    <div class="form-group">
+                        <label>Nueva categoría</label>
+                        <select id="bulkCategorySelect" required>
+                            <option value="">Selecciona una categoría</option>
+                        </select>
+                    </div>
+                    <div class="help-text">
+                        <i data-lucide="info"></i>
+                        Se aplicará la categoría seleccionada a todos los cromos en el rango especificado.
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" data-close="modalBulkCategory">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Aplicar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Cromos Faltantes (Usuario) -->
+    <div id="modalMissingCards" class="modal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h3>📋 Cromos Faltantes</h3>
+                <button class="btn-close" data-close="modalMissingCards">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-toolbar">
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-sm" id="btnMissingUngrouped">
+                            <i data-lucide="list"></i>
+                            Sin agrupar
+                        </button>
+                        <button type="button" class="btn btn-sm active" id="btnMissingGrouped">
+                            <i data-lucide="folder"></i>
+                            Agrupado
+                        </button>
+                    </div>
+                    <button type="button" class="btn btn-secondary btn-sm" id="btnCopyMissing">
+                        <i data-lucide="copy"></i>
+                        Copiar al portapapeles
+                    </button>
+                </div>
+                <div class="cards-list-container" id="missingCardsContent">
+                    <!-- Contenido dinámico -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Cromos Repetidos (Usuario) -->
+    <div id="modalDuplicateCards" class="modal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h3>🔄 Cromos Repetidos</h3>
+                <button class="btn-close" data-close="modalDuplicateCards">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-toolbar">
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-sm" id="btnDuplicatesUngrouped">
+                            <i data-lucide="list"></i>
+                            Sin agrupar
+                        </button>
+                        <button type="button" class="btn btn-sm active" id="btnDuplicatesGrouped">
+                            <i data-lucide="folder"></i>
+                            Agrupado
+                        </button>
+                    </div>
+                    <button type="button" class="btn btn-secondary btn-sm" id="btnCopyDuplicates">
+                        <i data-lucide="copy"></i>
+                        Copiar al portapapeles
+                    </button>
+                </div>
+                <div class="cards-list-container" id="duplicateCardsContent">
+                    <!-- Contenido dinámico -->
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- ========================================
          SCRIPTS
+         ======================================== -->
+    <!-- ========================================
+         SCRIPTS - ORDEN CORRECTO
          ======================================== -->
     <script src="supabase-client.js"></script>
     <script src="js/utils.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/api.js"></script>
     <script src="js/analytics-api.js"></script>
+    <script src="js/realtime-sync.js"></script>
     <script src="js/ui.js"></script>
     <script src="js/card-groups.js"></script>
-    <script src="js/card-grouping.js"></script>
+    <script src="js/bulk-actions.js"></script>
+    <script src="js/cards-lists.js"></script>
+    <!-- card-grouping.js ELIMINADO - ya no es necesario -->
     <script src="js/admin-ui.js"></script>
     <script src="js/scroll-to-top.js"></script>
     <script src="js/analytics-ui.js"></script>
@@ -410,83 +528,3 @@
     <script src="js/app.js"></script>
 </body>
 </html>
-<!-- ========================================
-     VISTA: DASHBOARD DE ANALYTICS (Admin)
-     Esta sección debe agregarse en index.html después de viewAdminDashboard
-     ======================================== -->
-<section id="viewAnalyticsDashboard" class="view">
-    <div class="container">
-        <div class="view-header">
-            <button id="btnBackFromAnalytics" class="btn btn-outline">
-                <i data-lucide="arrow-left"></i>
-                Volver
-            </button>
-            <div>
-                <h2>📊 Analytics & Estadísticas</h2>
-                <p class="view-subtitle">Panel de análisis del sistema</p>
-            </div>
-            <button id="btnRefreshAnalytics" class="btn btn-outline">
-                <i data-lucide="refresh-cw"></i>
-                Actualizar
-            </button>
-        </div>
-
-        <!-- Tarjetas de Resumen -->
-        <div id="analyticsSummaryCards" class="analytics-cards-grid"></div>
-
-        <!-- Gráficos Principales -->
-        <div class="analytics-charts-row">
-            <div class="analytics-chart-container">
-                <div class="chart-header">
-                    <h3>Crecimiento de Usuarios (30 días)</h3>
-                </div>
-                <div class="chart-body">
-                    <canvas id="chartUserGrowth"></canvas>
-                </div>
-            </div>
-
-            <div class="analytics-chart-container">
-                <div class="chart-header">
-                    <h3>Álbumes Populares</h3>
-                </div>
-                <div class="chart-body">
-                    <canvas id="chartAlbums"></canvas>
-                </div>
-            </div>
-        </div>
-
-        <!-- Segunda Fila de Gráficos -->
-        <div class="analytics-grid-2-1">
-            <div class="analytics-section">
-                <h3 class="section-title">Distribución de Progreso</h3>
-                <div class="chart-container-small">
-                    <canvas id="chartProgressDistribution"></canvas>
-                </div>
-            </div>
-
-            <div class="analytics-section">
-                <h3 class="section-title">Actividad Reciente</h3>
-                <div id="recentActivityList" class="activity-list"></div>
-            </div>
-        </div>
-
-        <!-- Tabla de Álbumes -->
-        <div class="analytics-section">
-            <h3 class="section-title">Resumen de Álbumes</h3>
-            <div id="albumsTable" class="table-container"></div>
-        </div>
-
-        <!-- Top Cromos -->
-        <div class="analytics-grid-2">
-            <div class="analytics-section">
-                <h3 class="section-title">Top Cromos Más Coleccionados</h3>
-                <div id="topCollectedCards"></div>
-            </div>
-
-            <div class="analytics-section">
-                <h3 class="section-title">Cromos Más Repetidos</h3>
-                <div id="mostDuplicatedCards"></div>
-            </div>
-        </div>
-    </div>
-</section>

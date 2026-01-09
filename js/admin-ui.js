@@ -1,12 +1,13 @@
 /**
- * admin-ui.js - Interfaz de Administrador
- * Gestión de álbumes maestros, cromos y categorías
+ * admin-ui.js - Interfaz de Administrador MEJORADA
+ * Ahora con agrupaciones igual que el usuario
  */
 
 const AdminUI = {
   currentAlbumId: null,
   currentCards: [],
   currentCategories: [],
+  viewMode: 'album',
 
   /**
    * Mostrar dashboard de admin
@@ -34,10 +35,9 @@ const AdminUI = {
   setupDashboardButtons() {
     const btnAnalytics = document.getElementById('btnViewAnalytics');
     if (btnAnalytics) {
-      btnAnalytics.replaceWith(btnAnalytics.cloneNode(true));
-      document.getElementById('btnViewAnalytics').addEventListener('click', () => {
-        AnalyticsUI.showAnalyticsDashboard();
-      });
+      const newBtn = btnAnalytics.cloneNode(true);
+      btnAnalytics.replaceWith(newBtn);
+      newBtn.addEventListener('click', () => AnalyticsUI.showAnalyticsDashboard());
     }
   },
 
@@ -53,17 +53,16 @@ const AdminUI = {
           <div class="album-info">
             ${album.season ? `<span><i data-lucide="calendar"></i> ${Utils.escapeHtml(album.season)}</span>` : ''}
             ${album.competition ? `<span><i data-lucide="trophy"></i> ${Utils.escapeHtml(album.competition)}</span>` : ''}
-            ${album.category ? `<span class="category-badge categoria-${album.category.name.toLowerCase().replace(/\s+/g, '-')}" style="border-color: ${albumColor}; color: ${albumColor};">${Utils.escapeHtml(album.category.name)}</span>` : ''}
           </div>
           <div class="album-actions">
-            <button class="btn btn-primary btn-manage-album" data-id="${album.id}">
+            <button class="btn btn-primary btn-manage-album" data-album-id="${album.id}">
               <i data-lucide="settings"></i>
               Gestionar Cromos
             </button>
-            <button class="btn-icon btn-edit-album" data-id="${album.id}" title="Editar">
+            <button class="btn-icon btn-edit-album" data-album-id="${album.id}" title="Editar">
               <i data-lucide="edit-2"></i>
             </button>
-            <button class="btn-icon btn-delete-album" data-id="${album.id}" title="Eliminar">
+            <button class="btn-icon btn-delete-album" data-album-id="${album.id}" title="Eliminar">
               <i data-lucide="trash-2"></i>
             </button>
           </div>
@@ -78,39 +77,29 @@ const AdminUI = {
    * Configurar listeners de la lista de álbumes admin
    */
   setupAdminAlbumsListeners() {
-    // Botón crear álbum
     const btnNew = document.getElementById('btnNewAlbum');
     if (btnNew) {
-      btnNew.replaceWith(btnNew.cloneNode(true));
-      document.getElementById('btnNewAlbum').addEventListener('click', () => {
-        this.openAlbumModal();
-      });
+      const newBtn = btnNew.cloneNode(true);
+      btnNew.replaceWith(newBtn);
+      newBtn.addEventListener('click', () => this.openAlbumModal());
     }
 
-    // Botones de editar
     document.querySelectorAll('.btn-edit-album').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
-        const albumId = btn.dataset.id;
-        this.openAlbumModal(albumId);
+        this.openAlbumModal(btn.dataset.albumId);
       });
     });
 
-    // Botones de eliminar
     document.querySelectorAll('.btn-delete-album').forEach(btn => {
       btn.addEventListener('click', async (e) => {
         e.stopPropagation();
-        const albumId = btn.dataset.id;
-        await this.deleteAlbum(albumId);
+        await this.deleteAlbum(btn.dataset.albumId);
       });
     });
 
-    // Botones de gestionar
     document.querySelectorAll('.btn-manage-album').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const albumId = btn.dataset.id;
-        this.openAlbumManager(albumId);
-      });
+      btn.addEventListener('click', () => this.openAlbumManager(btn.dataset.albumId));
     });
   },
 
@@ -123,7 +112,6 @@ const AdminUI = {
     const title = document.getElementById('modalAlbumTitle');
     
     if (albumId) {
-      // Editar
       try {
         Utils.showLoader();
         const album = await API.getAlbum(albumId);
@@ -142,7 +130,6 @@ const AdminUI = {
         Utils.hideLoader();
       }
     } else {
-      // Crear
       title.textContent = 'Nuevo Álbum';
       form.reset();
       form.dataset.albumId = '';
@@ -176,7 +163,6 @@ const AdminUI = {
         Utils.showToast('Álbum actualizado', 'success');
       } else {
         const newAlbum = await API.createAlbum(albumData);
-        // Crear categoría básica automáticamente
         await API.createCategory(newAlbum.id, {
           name: 'Básica',
           color: '#10B981',
@@ -218,14 +204,13 @@ const AdminUI = {
   },
 
   /**
-   * Abrir gestor de álbum (cromos y categorías)
+   * Abrir gestor de álbum (cromos y categorías) - CON AGRUPACIONES
    */
   async openAlbumManager(albumId) {
     try {
       Utils.showLoader();
       this.currentAlbumId = albumId;
       
-      // Cargar álbum, cromos y categorías
       const [album, cards, categories] = await Promise.all([
         API.getAlbum(albumId),
         API.getMasterCards(albumId),
@@ -235,10 +220,12 @@ const AdminUI = {
       this.currentCards = cards;
       this.currentCategories = categories;
       
-      // Mostrar vista
+      // Setear color del álbum
+      const albumColor = album.color || '#ED8936';
+      document.documentElement.style.setProperty('--album-color', albumColor);
+      
       Utils.showView('viewAlbumManager');
       
-      // Renderizar
       document.getElementById('albumManagerTitle').textContent = album.name;
       this.renderCategories();
       this.renderMasterCards();
@@ -269,7 +256,7 @@ const AdminUI = {
         <span class="category-color" style="background: ${cat.color};"></span>
         <span class="category-name">${Utils.escapeHtml(cat.name)}</span>
         ${!cat.is_basic ? `
-          <button class="btn-icon btn-delete-category" data-id="${cat.id}">
+          <button class="btn-icon btn-delete-category" data-category-id="${cat.id}">
             <i data-lucide="x"></i>
           </button>
         ` : ''}
@@ -280,7 +267,7 @@ const AdminUI = {
   },
 
   /**
-   * Renderizar cromos maestros
+   * Renderizar cromos maestros CON AGRUPACIONES (igual que usuario)
    */
   renderMasterCards() {
     const container = document.getElementById('masterCardsList');
@@ -291,95 +278,174 @@ const AdminUI = {
       return;
     }
 
-    const sortedCards = Utils.sortCards(this.currentCards);
-    
-    container.innerHTML = `
-      <div class="cards-grid-compact">
-        ${sortedCards.map(card => `
-          <div class="card-item-compact" data-id="${card.id}">
-            <div class="card-number">${Utils.escapeHtml(card.number)}</div>
-            <div class="card-info">
-              <div class="card-name">${Utils.escapeHtml(card.player_name)}</div>
-              <div class="card-meta">${Utils.escapeHtml(card.team || '')}</div>
-            </div>
-            <div class="card-actions">
-              <button class="btn-icon btn-edit-card" data-id="${card.id}">
-                <i data-lucide="edit-2"></i>
-              </button>
-              <button class="btn-icon btn-delete-card" data-id="${card.id}">
-                <i data-lucide="trash-2"></i>
-              </button>
-            </div>
-          </div>
-        `).join('')}
-      </div>
-    `;
+    // Convertir master_cards a formato compatible con CardGroups
+    const cardsForGrouping = this.currentCards.map(card => ({
+      id: card.id,
+      number: card.number,
+      playerName: card.player_name,
+      team: card.team,
+      categoryId: card.category_id,
+      category: card.category,
+      status: 'admin' // Los cromos maestros no tienen estado
+    }));
+
+    // Agrupar igual que en usuario
+    const groups = CardGroups.group(cardsForGrouping, this.currentCategories);
+
+    if (groups.length === 0) {
+      container.innerHTML = '<div class="empty-state"><i data-lucide="inbox"></i><p>No hay cromos</p></div>';
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+      return;
+    }
+
+    // Renderizar con sistema de grupos (vista álbum siempre para admin)
+    container.innerHTML = CardGroups.render(groups, (card) => this.renderMasterCard(card), this.viewMode);
 
     if (typeof lucide !== 'undefined') lucide.createIcons();
+  },
+
+  /**
+   * Renderizar un cromo maestro individual
+   */
+  renderMasterCard(card) {
+    return `
+      <div class="card-admin-item" data-id="${card.id}">
+        <div class="card-admin-number">${Utils.escapeHtml(card.number)}</div>
+        <div class="card-admin-content">
+          <div class="card-admin-name">${Utils.escapeHtml(card.playerName)}</div>
+          <div class="card-admin-team">${Utils.escapeHtml(card.team || '')}</div>
+          ${card.category ? `
+            <div class="card-admin-category" style="color: ${card.category.color}">
+              ${Utils.escapeHtml(card.category.name)}
+            </div>
+          ` : ''}
+        </div>
+        <div class="card-admin-actions">
+          <button class="btn-icon-small btn-edit-card" data-card-id="${card.id}" title="Editar">
+            <i data-lucide="edit-2"></i>
+          </button>
+          <button class="btn-icon-small btn-delete-card" data-card-id="${card.id}" title="Eliminar">
+            <i data-lucide="trash-2"></i>
+          </button>
+        </div>
+      </div>
+    `;
   },
 
   /**
    * Configurar listeners del gestor de álbum
    */
   setupAlbumManagerListeners() {
-    // Botón volver
     const btnBack = document.getElementById('btnBackToAlbums');
     if (btnBack) {
-      btnBack.replaceWith(btnBack.cloneNode(true));
-      document.getElementById('btnBackToAlbums').addEventListener('click', () => {
-        this.showDashboard();
-      });
+      const newBtn = btnBack.cloneNode(true);
+      btnBack.replaceWith(newBtn);
+      newBtn.addEventListener('click', () => this.showDashboard());
     }
 
-    // Botón nueva categoría
     const btnNewCat = document.getElementById('btnNewCategory');
     if (btnNewCat) {
-      btnNewCat.replaceWith(btnNewCat.cloneNode(true));
-      document.getElementById('btnNewCategory').addEventListener('click', () => {
-        this.openCategoryModal();
-      });
+      const newBtn = btnNewCat.cloneNode(true);
+      btnNewCat.replaceWith(newBtn);
+      newBtn.addEventListener('click', () => this.openCategoryModal());
     }
 
-    // Botón nuevo cromo
     const btnNewCard = document.getElementById('btnNewCard');
     if (btnNewCard) {
-      btnNewCard.replaceWith(btnNewCard.cloneNode(true));
-      document.getElementById('btnNewCard').addEventListener('click', () => {
-        this.openCardModal();
-      });
+      const newBtn = btnNewCard.cloneNode(true);
+      btnNewCard.replaceWith(newBtn);
+      newBtn.addEventListener('click', () => this.openCardModal());
     }
 
-    // Botón importar
     const btnImport = document.getElementById('btnImportCards');
     if (btnImport) {
-      btnImport.replaceWith(btnImport.cloneNode(true));
-      document.getElementById('btnImportCards').addEventListener('click', () => {
-        Utils.openModal('modalImport');
+      const newBtn = btnImport.cloneNode(true);
+      btnImport.replaceWith(newBtn);
+      newBtn.addEventListener('click', () => Utils.openModal('modalImport'));
+    }
+
+    // Botón cambio masivo de categorías
+    const btnBulkCategory = document.getElementById('btnBulkCategory');
+    if (btnBulkCategory) {
+      const newBtn = btnBulkCategory.cloneNode(true);
+      btnBulkCategory.replaceWith(newBtn);
+      newBtn.addEventListener('click', () => {
+        BulkActions.openBulkCategoryModal(this.currentAlbumId, this.currentCategories);
       });
     }
 
-    // Eliminar categoría
+    // Botón cambiar vista (opcional para admin)
+    const btnToggleView = document.getElementById('btnToggleViewAdmin');
+    if (btnToggleView) {
+      const newBtn = btnToggleView.cloneNode(true);
+      btnToggleView.replaceWith(newBtn);
+      newBtn.addEventListener('click', () => {
+        this.viewMode = this.viewMode === 'album' ? 'list' : 'album';
+        this.renderMasterCards();
+        this.setupAlbumManagerListeners();
+      });
+    }
+
     document.querySelectorAll('.btn-delete-category').forEach(btn => {
       btn.addEventListener('click', async () => {
-        const catId = btn.dataset.id;
-        await this.deleteCategory(catId);
+        await this.deleteCategory(btn.dataset.categoryId);
       });
     });
 
-    // Editar cromo
-    document.querySelectorAll('.btn-edit-card').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const cardId = btn.dataset.id;
-        this.openCardModal(cardId);
-      });
-    });
+    // DELEGACIÓN: Eventos de grupos y cromos
+    this.setupMasterCardsListeners();
+  },
 
-    // Eliminar cromo
-    document.querySelectorAll('.btn-delete-card').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const cardId = btn.dataset.id;
-        await this.deleteCard(cardId);
-      });
+  /**
+   * Setup listeners del contenedor de cromos maestros (DELEGACIÓN)
+   */
+  setupMasterCardsListeners() {
+    const container = document.getElementById('masterCardsList');
+    if (!container) return;
+
+    const newContainer = container.cloneNode(true);
+    container.replaceWith(newContainer);
+
+    newContainer.addEventListener('click', async (e) => {
+      // Acciones de grupos
+      const groupAction = e.target.closest('[data-group-action]');
+      if (groupAction) {
+        e.preventDefault();
+        const action = groupAction.dataset.groupAction;
+        const groupKey = groupAction.dataset.groupKey;
+
+        if (action === 'toggle' && groupKey) {
+          CardGroups.toggle(groupKey);
+          this.renderMasterCards();
+          this.setupMasterCardsListeners();
+        } else if (action === 'expand-all') {
+          const allKeys = Array.from(document.querySelectorAll('[data-group-key]'))
+            .map(el => el.dataset.groupKey)
+            .filter(Boolean);
+          CardGroups.expandAll(allKeys);
+          this.renderMasterCards();
+          this.setupMasterCardsListeners();
+        } else if (action === 'collapse-all') {
+          CardGroups.collapseAll();
+          this.renderMasterCards();
+          this.setupMasterCardsListeners();
+        }
+        return;
+      }
+
+      // Editar cromo
+      const editBtn = e.target.closest('.btn-edit-card');
+      if (editBtn) {
+        this.openCardModal(editBtn.dataset.cardId);
+        return;
+      }
+
+      // Eliminar cromo
+      const deleteBtn = e.target.closest('.btn-delete-card');
+      if (deleteBtn) {
+        await this.deleteCard(deleteBtn.dataset.cardId);
+        return;
+      }
     });
   },
 
@@ -410,9 +476,10 @@ const AdminUI = {
       Utils.closeModal('modalCategory');
       Utils.showToast('Categoría creada', 'success');
       
-      // Recargar categorías
       this.currentCategories = await API.getCategories(this.currentAlbumId);
       this.renderCategories();
+      this.renderMasterCards();
+      this.setupAlbumManagerListeners();
       
     } catch (error) {
       console.error('Error saving category:', error);
@@ -435,6 +502,8 @@ const AdminUI = {
       
       this.currentCategories = await API.getCategories(this.currentAlbumId);
       this.renderCategories();
+      this.renderMasterCards();
+      this.setupAlbumManagerListeners();
       
     } catch (error) {
       console.error('Error deleting category:', error);
@@ -452,14 +521,12 @@ const AdminUI = {
     const form = document.getElementById('formCard');
     const title = document.getElementById('modalCardTitle');
     
-    // Llenar selector de categorías
     const categorySelect = document.getElementById('cardCategory');
     categorySelect.innerHTML = this.currentCategories.map(cat => 
       `<option value="${cat.id}">${Utils.escapeHtml(cat.name)}</option>`
     ).join('');
 
     if (cardId) {
-      // Editar
       const card = this.currentCards.find(c => c.id === cardId);
       if (!card) return;
 
@@ -471,7 +538,6 @@ const AdminUI = {
       
       form.dataset.cardId = cardId;
     } else {
-      // Crear
       title.textContent = 'Nuevo Cromo';
       form.reset();
       form.dataset.cardId = '';
@@ -511,7 +577,6 @@ const AdminUI = {
       
       Utils.closeModal('modalCard');
       
-      // Recargar cromos
       this.currentCards = await API.getMasterCards(this.currentAlbumId);
       this.renderMasterCards();
       this.setupAlbumManagerListeners();
@@ -575,7 +640,7 @@ const AdminUI = {
       if (format === 'csv') {
         const lines = content.split('\n').filter(l => l.trim());
         if (lines[0].includes('number') || lines[0].includes('número')) {
-          lines.shift(); // Quitar header
+          lines.shift();
         }
         
         const basicCategory = this.currentCategories.find(c => c.is_basic);
@@ -600,7 +665,6 @@ const AdminUI = {
       Utils.showToast(`${cards.length} cromos importados`, 'success');
       Utils.closeModal('modalImport');
       
-      // Recargar
       this.currentCards = await API.getMasterCards(this.currentAlbumId);
       this.renderMasterCards();
       this.setupAlbumManagerListeners();

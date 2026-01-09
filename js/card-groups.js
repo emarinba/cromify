@@ -1,205 +1,243 @@
 /**
- * card-groups.js - CON LOGS DE DEBUG
+ * card-groups.js - Sistema UNIFICADO de agrupación de cromos
+ * Soporta vista álbum y vista lista
  */
 
 const CardGroups = {
   expanded: new Set(),
+  viewMode: 'album', // 'album' o 'list'
+  initialized: false, // Flag para saber si ya inicializamos
 
-  group(cards, categories) {
-    console.log('🔵 CardGroups.group() - Iniciando agrupación');
-    console.log('   Cards:', cards?.length);
-    console.log('   Categories:', categories?.length);
-    
-    if (!cards?.length) {
-      console.log('⚠️  Sin cards, retornando []');
-      return [];
+  /**
+   * Resetear estado
+   */
+  reset() {
+    this.expanded.clear();
+    this.initialized = false;
+  },
+
+  /**
+   * Expandir todos los grupos
+   */
+  expandAll(groupKeys) {
+    this.expanded.clear(); // Limpiar primero
+    groupKeys.forEach(key => this.expanded.add(key));
+  },
+
+  /**
+   * Colapsar todos los grupos
+   */
+  collapseAll() {
+    this.expanded.clear();
+  },
+
+  /**
+   * Toggle de un grupo específico
+   */
+  toggle(groupKey) {
+    if (this.expanded.has(groupKey)) {
+      this.expanded.delete(groupKey);
+    } else {
+      this.expanded.add(groupKey);
     }
+  },
 
-    const catMap = new Map(categories.map(c => [c.id, c]));
-    const basic = categories.find(c => c.name.toLowerCase().replace(/á/g, 'a') === 'basica');
-    console.log('   Categoría básica encontrada:', basic?.name);
-    
+  /**
+   * Verificar si un grupo está expandido
+   */
+  isExpanded(groupKey) {
+    return this.expanded.has(groupKey);
+  },
+
+  /**
+   * Agrupar cromos por equipo (categoría básica) o por categoría (resto)
+   */
+  group(cards, categories) {
+    if (!cards || cards.length === 0) return [];
+
+    const categoryMap = new Map(categories.map(c => [c.id, c]));
+    const basicCategory = categories.find(c => 
+      c.name.toLowerCase().replace(/á/g, 'a') === 'basica' ||
+      c.name.toLowerCase() === 'básica' ||
+      c.is_basic === true
+    );
+
     const groups = new Map();
 
     cards.forEach(card => {
-      const cat = catMap.get(card.categoryId);
-      let key, name, color;
+      const category = categoryMap.get(card.categoryId);
+      let groupKey, groupName, groupColor;
 
-      if (cat?.id === basic?.id) {
-        key = `team_${card.team || 'sin_equipo'}`;
-        name = card.team || 'Sin equipo';
-        color = '#718096';
+      // Si es categoría básica → agrupar por equipo
+      if (category && category.id === basicCategory?.id) {
+        groupKey = `team_${card.team || 'sin_equipo'}`;
+        groupName = card.team || 'Sin equipo';
+        groupColor = '#718096';
       } else {
-        key = `cat_${card.categoryId || 'sin_categoria'}`;
-        name = cat?.name || 'Sin categoría';
-        color = cat?.color || '#718096';
+        // Resto de categorías → agrupar por categoría
+        groupKey = `cat_${card.categoryId || 'sin_categoria'}`;
+        groupName = category?.name || 'Sin categoría';
+        groupColor = category?.color || '#718096';
       }
 
-      if (!groups.has(key)) {
-        groups.set(key, { key, name, color, cards: [] });
+      if (!groups.has(groupKey)) {
+        groups.set(groupKey, {
+          key: groupKey,
+          name: groupName,
+          color: groupColor,
+          cards: []
+        });
       }
-      groups.get(key).cards.push(card);
+
+      groups.get(groupKey).cards.push(card);
     });
 
-    const result = Array.from(groups.values());
-    console.log('   Grupos creados:', result.length);
-    result.forEach(g => console.log('      -', g.name, ':', g.cards.length, 'cromos'));
-    
-    result.sort((a, b) => {
+    // Convertir a array
+    const groupsArray = Array.from(groups.values());
+
+    // Ordenar: equipos primero, luego por nombre
+    groupsArray.sort((a, b) => {
       if (a.key.startsWith('team_') && !b.key.startsWith('team_')) return -1;
       if (!a.key.startsWith('team_') && b.key.startsWith('team_')) return 1;
       return a.name.localeCompare(b.name);
     });
 
-    result.forEach(g => {
-      g.cards = Utils.sortCards(g.cards);
-      const owned = g.cards.filter(c => c.status === 'tengo').length;
-      g.stats = {
-        total: g.cards.length,
+    // Calcular estadísticas para cada grupo
+    groupsArray.forEach(group => {
+      group.cards = Utils.sortCards(group.cards);
+      const total = group.cards.length;
+      const owned = group.cards.filter(c => c.status === 'tengo').length;
+      group.stats = {
+        total,
         owned,
-        percent: Math.round((owned / g.cards.length) * 100)
+        percentage: total > 0 ? Math.round((owned / total) * 100) : 0
       };
-      this.expanded.add(g.key);
     });
 
-    console.log('   Grupos expandidos:', Array.from(this.expanded));
-    console.log('✅ CardGroups.group() - Completado');
-    return result;
-  },
-
-  render(groups, cardRenderer) {
-    console.log('🔵 CardGroups.render() - Renderizando');
-    console.log('   Grupos a renderizar:', groups.length);
-    
-    if (!groups.length) {
-      console.log('⚠️  Sin grupos, retornando empty state');
-      return '<div class="empty-state"><i data-lucide="inbox"></i><p>Sin cromos</p></div>';
+    // Expandir todos SOLO la primera vez que se carga
+    if (!this.initialized && groupsArray.length > 0) {
+      groupsArray.forEach(g => this.expanded.add(g.key));
+      this.initialized = true;
     }
 
-    const html = `
+    return groupsArray;
+  },
+
+  /**
+   * Renderizar grupos con el modo de vista actual
+   */
+  render(groups, cardRenderer, viewMode = 'album') {
+    this.viewMode = viewMode;
+
+    if (!groups || groups.length === 0) {
+      return '<div class="empty-state"><i data-lucide="inbox"></i><p>No hay cromos</p></div>';
+    }
+
+    return `
       <div class="groups-toolbar">
-        <button class="btn-ghost" data-groups-action="expand-all">
+        <button class="btn-ghost" data-group-action="expand-all">
           <i data-lucide="chevrons-down"></i>
           Expandir todos
         </button>
-        <button class="btn-ghost" data-groups-action="collapse-all">
+        <button class="btn-ghost" data-group-action="collapse-all">
           <i data-lucide="chevrons-up"></i>
           Colapsar todos
         </button>
       </div>
       <div class="groups-list">
-        ${groups.map(g => {
-          const exp = this.expanded.has(g.key);
-          console.log('   Renderizando grupo:', g.name, '- Expandido:', exp);
-          return `
-            <div class="group ${exp ? 'expanded' : 'collapsed'}" data-group-id="${g.key}">
-              <button class="group-header" data-groups-action="toggle" data-key="${g.key}">
-                <i data-lucide="${exp ? 'chevron-down' : 'chevron-right'}" class="group-icon"></i>
-                <span class="group-dot" style="background:${g.color}"></span>
-                <h3 class="group-name">${Utils.escapeHtml(g.name)}</h3>
-                <div class="group-counter">
-                  <strong>${g.stats.owned}</strong>/${g.stats.total}
-                  <span class="group-percent">${g.stats.percent}%</span>
-                </div>
-              </button>
-              <div class="group-body" ${exp ? '' : 'hidden'}>
-                <div class="cards-grid">
-                  ${g.cards.map(cardRenderer).join('')}
-                </div>
-              </div>
-            </div>
-          `;
-        }).join('')}
+        ${groups.map(group => this.renderGroup(group, cardRenderer)).join('')}
       </div>
     `;
-    
-    console.log('✅ CardGroups.render() - HTML generado');
-    return html;
   },
 
-  listen(containerId, onUpdate) {
-    console.log('🔵 CardGroups.listen() - Configurando listeners');
-    console.log('   Container ID:', containerId);
-    
-    const el = document.getElementById(containerId);
-    if (!el) {
-      console.error('❌ Contenedor NO encontrado:', containerId);
-      return;
+  /**
+   * Renderizar un grupo individual
+   */
+  renderGroup(group, cardRenderer) {
+    const isExpanded = this.isExpanded(group.key);
+    const chevronIcon = isExpanded ? 'chevron-down' : 'chevron-right';
+
+    return `
+      <div class="group ${isExpanded ? 'expanded' : 'collapsed'}" data-group-key="${group.key}">
+        <button class="group-header" data-group-action="toggle" data-group-key="${group.key}">
+          <i data-lucide="${chevronIcon}" class="group-icon"></i>
+          <span class="group-dot" style="background: ${group.color};"></span>
+          <h3 class="group-name">${Utils.escapeHtml(group.name)}</h3>
+          <div class="group-counter">
+            <span class="group-progress">
+              <strong>${group.stats.owned}</strong> / ${group.stats.total}
+            </span>
+            <span class="group-percent">${group.stats.percentage}%</span>
+          </div>
+        </button>
+        <div class="group-body" ${isExpanded ? '' : 'hidden'}>
+          ${this.renderGroupContent(group, cardRenderer)}
+        </div>
+      </div>
+    `;
+  },
+
+  /**
+   * Renderizar contenido del grupo según el modo de vista
+   */
+  renderGroupContent(group, cardRenderer) {
+    if (this.viewMode === 'list') {
+      return `
+        <div class="cards-list-view">
+          ${group.cards.map(card => this.renderCardList(card)).join('')}
+        </div>
+      `;
+    } else {
+      return `
+        <div class="cards-grid">
+          ${group.cards.map(card => cardRenderer(card)).join('')}
+        </div>
+      `;
     }
-    
-    console.log('✅ Contenedor encontrado:', el);
+  },
 
-    el.addEventListener('click', e => {
-      console.log('═══════════════════════════════════════');
-      console.log('🔴 CLICK DETECTADO');
-      console.log('   Target:', e.target);
-      console.log('   Target.tagName:', e.target.tagName);
-      console.log('   Target.className:', e.target.className);
-      
-      const action = e.target.closest('[data-groups-action]');
-      console.log('   Closest [data-groups-action]:', action);
-      
-      if (!action) {
-        console.log('⚠️  NO es un elemento de grupos, ignorando');
-        console.log('═══════════════════════════════════════');
-        return;
-      }
-
-      e.preventDefault();
-      console.log('✅ Elemento de grupos detectado');
-      
-      const type = action.dataset.groupsAction;
-      console.log('   Action type:', type);
-
-      if (type === 'toggle') {
-        const key = action.dataset.key;
-        console.log('   🔵 TOGGLE GROUP');
-        console.log('      Key:', key);
-        console.log('      Estado actual:', this.expanded.has(key) ? 'EXPANDIDO' : 'COLAPSADO');
-        
-        if (this.expanded.has(key)) {
-          console.log('      ➡️  Colapsando...');
-          this.expanded.delete(key);
-        } else {
-          console.log('      ➡️  Expandiendo...');
-          this.expanded.add(key);
-        }
-        
-        console.log('      Nuevo estado:', this.expanded.has(key) ? 'EXPANDIDO' : 'COLAPSADO');
-        console.log('      Grupos expandidos ahora:', Array.from(this.expanded));
-        console.log('      🔄 Llamando onUpdate()...');
-        
-        onUpdate();
-        console.log('      ✅ onUpdate() completado');
-      }
-
-      if (type === 'expand-all') {
-        console.log('   🔵 EXPAND ALL');
-        const buttons = document.querySelectorAll('[data-key]');
-        console.log('      Botones encontrados:', buttons.length);
-        buttons.forEach(btn => {
-          const k = btn.dataset.key;
-          console.log('         Expandiendo:', k);
-          this.expanded.add(k);
-        });
-        console.log('      🔄 Llamando onUpdate()...');
-        onUpdate();
-        console.log('      ✅ onUpdate() completado');
-      }
-
-      if (type === 'collapse-all') {
-        console.log('   🔵 COLLAPSE ALL');
-        console.log('      Grupos antes:', Array.from(this.expanded));
-        this.expanded.clear();
-        console.log('      Grupos después:', Array.from(this.expanded));
-        console.log('      🔄 Llamando onUpdate()...');
-        onUpdate();
-        console.log('      ✅ onUpdate() completado');
-      }
-      
-      console.log('═══════════════════════════════════════');
-    });
-    
-    console.log('✅ CardGroups.listen() - Listeners configurados');
+  /**
+   * Renderizar cromo en modo lista
+   */
+  renderCardList(card) {
+    return `
+      <div class="card-list-item status-${card.status}" data-id="${card.id}">
+        <div class="card-list-number">${Utils.escapeHtml(card.number)}</div>
+        <div class="card-list-info">
+          <div class="card-list-name">${Utils.escapeHtml(card.playerName)}</div>
+          <div class="card-list-team">${Utils.escapeHtml(card.team || '')}</div>
+          ${card.category ? `
+            <div class="card-list-category" style="color: ${card.category.color}">
+              ${Utils.escapeHtml(card.category.name)}
+            </div>
+          ` : ''}
+        </div>
+        <div class="card-list-actions">
+          <button class="btn-status ${card.status === 'falta' ? 'active' : ''}"
+                  data-card-action="status" data-card-id="${card.id}" data-status="falta"
+                  title="Me falta">
+            <i data-lucide="x"></i>
+          </button>
+          <button class="btn-status ${card.status === 'tengo' ? 'active' : ''}"
+                  data-card-action="status" data-card-id="${card.id}" data-status="tengo"
+                  title="Lo tengo">
+            <i data-lucide="check"></i>
+          </button>
+          <button class="btn-status ${card.status === 'cambiado' ? 'active' : ''}"
+                  data-card-action="status" data-card-id="${card.id}" data-status="cambiado"
+                  title="Para cambiar">
+            <i data-lucide="repeat"></i>
+          </button>
+          <input type="number" 
+                 class="input-duplicates" 
+                 value="${card.duplicates_count || 0}" 
+                 min="0" 
+                 data-card-action="duplicates"
+                 data-card-id="${card.id}"
+                 ${card.status !== 'tengo' ? 'disabled' : ''}
+                 placeholder="Rep.">
+        </div>
+      </div>
+    `;
   }
 };

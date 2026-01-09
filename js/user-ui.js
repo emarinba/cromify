@@ -1,10 +1,11 @@
 /**
- * user-ui.js - Interfaz de Usuario (CON DELEGACIÓN DE EVENTOS)
- * Sistema robusto que sobrevive a re-renders
+ * user-ui.js - Interfaz de Usuario REFACTORIZADA
+ * Sistema unificado y consistente de eventos
  */
 
 const UserUI = {
   currentCollectionId: null,
+  currentAlbumId: null, // Necesario para sincronización
   currentCards: [],
   currentCategories: [],
   viewMode: 'album',
@@ -16,6 +17,15 @@ const UserUI = {
   async showDashboard() {
     try {
       Utils.showLoader();
+      
+      // Desuscribirse de sincronización en tiempo real al salir de colección
+      if (RealtimeSync.isActive()) {
+        RealtimeSync.unsubscribeAll();
+      }
+      
+      // Resetear estado de grupos
+      CardGroups.reset();
+      
       Utils.showView('viewUserDashboard');
       
       const [stats, collections, albums] = await Promise.all([
@@ -99,15 +109,23 @@ const UserUI = {
       <div class="collection-card" data-id="${col.id}">
         <div class="collection-header" style="background: ${col.album.color};">
           <h4>${Utils.escapeHtml(col.album.name)}</h4>
+          <button class="btn-icon btn-leave-collection" 
+                  data-collection-id="${col.id}" 
+                  data-album-name="${Utils.escapeHtml(col.album.name)}"
+                  title="Desunirse de este álbum">
+            <i data-lucide="x"></i>
+          </button>
         </div>
         <div class="collection-body">
           <div class="collection-info">
             <span><i data-lucide="calendar"></i> ${Utils.formatDateShort(col.joined_at)}</span>
           </div>
-          <button class="btn btn-primary btn-open-collection" data-id="${col.id}">
-            <i data-lucide="folder-open"></i>
-            Ver Colección
-          </button>
+          <div class="collection-actions">
+            <button class="btn btn-primary btn-open-collection" data-collection-id="${col.id}">
+              <i data-lucide="folder-open"></i>
+              Ver Colección
+            </button>
+          </div>
         </div>
       </div>
     `).join('');
@@ -156,30 +174,38 @@ const UserUI = {
    * Setup listeners del dashboard (DELEGACIÓN DE EVENTOS)
    */
   setupDashboardListeners() {
-    // Remover listeners anteriores
     const myCollectionsList = document.getElementById('myCollectionsList');
     const availableAlbumsList = document.getElementById('availableAlbumsList');
 
-    // DELEGACIÓN: Un solo listener en el contenedor padre
     if (myCollectionsList) {
-      myCollectionsList.replaceWith(myCollectionsList.cloneNode(true));
-      const newMyCollections = document.getElementById('myCollectionsList');
+      const newList = myCollectionsList.cloneNode(true);
+      myCollectionsList.replaceWith(newList);
       
-      newMyCollections.addEventListener('click', async (e) => {
-        const btn = e.target.closest('.btn-open-collection');
-        if (btn) {
-          const collectionId = btn.dataset.id;
+      newList.addEventListener('click', async (e) => {
+        // Botón abrir colección
+        const btnOpen = e.target.closest('.btn-open-collection');
+        if (btnOpen) {
+          const collectionId = btnOpen.dataset.collectionId;
           await this.openCollection(collectionId);
+          return;
+        }
+
+        // Botón desunirse
+        const btnLeave = e.target.closest('.btn-leave-collection');
+        if (btnLeave) {
+          const collectionId = btnLeave.dataset.collectionId;
+          const albumName = btnLeave.dataset.albumName;
+          await this.leaveCollection(collectionId, albumName);
+          return;
         }
       });
     }
 
-    // DELEGACIÓN: Álbumes disponibles
     if (availableAlbumsList) {
-      availableAlbumsList.replaceWith(availableAlbumsList.cloneNode(true));
-      const newAvailableAlbums = document.getElementById('availableAlbumsList');
+      const newList = availableAlbumsList.cloneNode(true);
+      availableAlbumsList.replaceWith(newList);
       
-      newAvailableAlbums.addEventListener('click', async (e) => {
+      newList.addEventListener('click', async (e) => {
         const btn = e.target.closest('.btn-join-album');
         if (btn) {
           const albumId = btn.dataset.albumId;
@@ -195,12 +221,33 @@ const UserUI = {
   async joinAlbum(albumId) {
     try {
       Utils.showLoader();
-      await API.joinAlbum(albumId);
+      await API.joinCollection(albumId);
       Utils.showToast('Te has unido al álbum', 'success');
       await this.showDashboard();
     } catch (error) {
       console.error('Error joining album:', error);
       Utils.showToast('Error al unirse al álbum', 'error');
+    } finally {
+      Utils.hideLoader();
+    }
+  },
+
+  /**
+   * Desunirse de un álbum
+   */
+  async leaveCollection(collectionId, albumName) {
+    if (!Utils.confirm(`¿Desunirse de "${albumName}"? Se perderá todo tu progreso en este álbum.`)) {
+      return;
+    }
+
+    try {
+      Utils.showLoader();
+      await API.leaveCollection(collectionId);
+      Utils.showToast('Te has desunido del álbum', 'success');
+      await this.showDashboard();
+    } catch (error) {
+      console.error('Error leaving collection:', error);
+      Utils.showToast('Error al desunirse del álbum', 'error');
     } finally {
       Utils.hideLoader();
     }
@@ -214,8 +261,8 @@ const UserUI = {
       Utils.showLoader();
       this.currentCollectionId = collectionId;
       
-      // Cargar datos
       const collection = await API.getCollection(collectionId);
+      this.currentAlbumId = collection.album_id;
       
       const [cards, categories, stats] = await Promise.all([
         API.getUserCards(collectionId),
@@ -226,7 +273,7 @@ const UserUI = {
       this.currentCards = cards;
       this.currentCategories = categories;
       
-      // Setear el color del álbum
+      // Setear color del álbum
       const albumColor = collection.album.color || '#ED8936';
       document.documentElement.style.setProperty('--album-color', albumColor);
       
@@ -239,32 +286,17 @@ const UserUI = {
       this.renderFilters();
       this.renderCards();
       
-      // Setup listeners de grupos UNA VEZ
-      CardGroups.listen('cardsContainer', () => this.renderCards());
-      
-      // Setup listeners de cromos EN EL MISMO CONTENEDOR
-      const cardsContainer = document.getElementById('cardsContainer');
-      
-      cardsContainer.addEventListener('click', async (e) => {
-        const statusBtn = e.target.closest('[data-status]');
-        if (statusBtn) {
-          e.stopPropagation();
-          const cardId = statusBtn.dataset.cardId;
-          const status = statusBtn.dataset.status;
-          await this.updateCardStatus(cardId, status);
-        }
-      });
-
-      cardsContainer.addEventListener('change', async (e) => {
-        const input = e.target.closest('.mini-duplicates-input, .duplicates-input');
-        if (input) {
-          const cardId = input.dataset.cardId;
-          const count = parseInt(e.target.value) || 0;
-          await this.updateCardDuplicates(cardId, count);
-        }
-      });
-
+      // Setup listeners
       this.setupCollectionListeners();
+      
+      // 🔔 ACTIVAR SINCRONIZACIÓN EN TIEMPO REAL
+      console.log('🔔 Activando sincronización en tiempo real para álbum:', collection.album_id);
+      await RealtimeSync.subscribeToAlbum(collection.album_id, async () => {
+        // Callback que se ejecuta cuando hay cambios
+        await this.reloadCollectionDataSilently();
+      });
+      
+      console.log('✅ Sincronización en tiempo real activa');
       
     } catch (error) {
       console.error('Error opening collection:', error);
@@ -306,6 +338,11 @@ const UserUI = {
           <option value="cambiado" ${this.filters.status === 'cambiado' ? 'selected' : ''}>Cambiado</option>
         </select>
         
+        <button id="btnReloadData" class="btn btn-secondary" title="Recargar datos del álbum">
+          <i data-lucide="refresh-cw"></i>
+          Actualizar
+        </button>
+        
         <button id="btnClearFilters" class="btn btn-secondary">
           <i data-lucide="x"></i>
           Limpiar
@@ -313,7 +350,7 @@ const UserUI = {
         
         <button id="btnToggleView" class="btn btn-secondary">
           <i data-lucide="${this.viewMode === 'album' ? 'list' : 'grid'}"></i>
-          ${this.viewMode === 'album' ? 'Lista' : 'Álbum'}
+          ${this.viewMode === 'album' ? 'Vista Lista' : 'Vista Álbum'}
         </button>
       </div>
     `;
@@ -347,28 +384,29 @@ const UserUI = {
       filtered = filtered.filter(c => c.status === this.filters.status);
     }
 
-    // Agrupar
+    // Agrupar cromos
     const groups = CardGroups.group(filtered, this.currentCategories);
 
-    // Renderizar
     if (groups.length === 0) {
-      UI.showEmptyState('inbox', 'Sin resultados', 'No hay cromos', '#cardsContainer');
+      container.innerHTML = '<div class="empty-state"><i data-lucide="inbox"></i><p>No hay cromos que mostrar</p></div>';
+      if (typeof lucide !== 'undefined') lucide.createIcons();
       return;
     }
 
-    container.innerHTML = CardGroups.render(groups, card => this.renderCard(card));
+    // Renderizar con el modo de vista actual
+    container.innerHTML = CardGroups.render(groups, (card) => this.renderCard(card), this.viewMode);
 
     if (typeof lucide !== 'undefined') lucide.createIcons();
   },
 
   /**
-   * Renderizar un cromo (sin vista específica)
+   * Renderizar un cromo (vista álbum)
    */
   renderCard(card) {
     return `
       <div class="card-album-item status-${card.status}" data-id="${card.id}">
         <div class="album-side-btn left ${card.status === 'falta' ? 'active' : ''}" 
-             data-card-id="${card.id}" data-status="falta">✗</div>
+             data-card-action="status" data-card-id="${card.id}" data-status="falta">✗</div>
         
         <div class="album-card-content">
           <div class="album-card-number">${Utils.escapeHtml(card.number)}</div>
@@ -382,66 +420,102 @@ const UserUI = {
           
           <div class="album-bottom-controls">
             <button class="album-mini-btn ${card.status === 'cambiado' ? 'active' : ''}"
-                    data-card-id="${card.id}" data-status="cambiado">⇄</button>
+                    data-card-action="status" data-card-id="${card.id}" data-status="cambiado">⇄</button>
             <input type="number" class="mini-duplicates-input" 
                    value="${card.duplicates_count || 0}" min="0" 
-                   data-card-id="${card.id}"
+                   data-card-action="duplicates" data-card-id="${card.id}"
                    ${card.status !== 'tengo' ? 'disabled' : ''}
                    placeholder="0">
           </div>
         </div>
         
         <div class="album-side-btn right ${card.status === 'tengo' ? 'active' : ''}" 
-             data-card-id="${card.id}" data-status="tengo">✓</div>
+             data-card-action="status" data-card-id="${card.id}" data-status="tengo">✓</div>
       </div>
     `;
   },
 
   /**
-   * Setup listeners de colección (DELEGACIÓN DE EVENTOS)
+   * Setup listeners de colección (SISTEMA UNIFICADO)
    */
   setupCollectionListeners() {
     // Botón volver
     const btnBack = document.getElementById('btnBackToDashboard');
     if (btnBack) {
-      btnBack.replaceWith(btnBack.cloneNode(true));
-      document.getElementById('btnBackToDashboard').addEventListener('click', () => {
-        this.showDashboard();
+      const newBtn = btnBack.cloneNode(true);
+      btnBack.replaceWith(newBtn);
+      newBtn.addEventListener('click', () => this.showDashboard());
+    }
+
+    // Botón mostrar faltantes
+    const btnShowMissing = document.getElementById('btnShowMissing');
+    if (btnShowMissing) {
+      const newBtn = btnShowMissing.cloneNode(true);
+      btnShowMissing.replaceWith(newBtn);
+      newBtn.addEventListener('click', () => {
+        CardsLists.openMissingCardsModal(this.currentCards, this.currentCategories);
       });
     }
 
-    // Filtros con debounce
+    // Botón mostrar repetidos
+    const btnShowDuplicates = document.getElementById('btnShowDuplicates');
+    if (btnShowDuplicates) {
+      const newBtn = btnShowDuplicates.cloneNode(true);
+      btnShowDuplicates.replaceWith(newBtn);
+      newBtn.addEventListener('click', () => {
+        CardsLists.openDuplicateCardsModal(this.currentCards, this.currentCategories);
+      });
+    }
+
+    // Botón recargar datos
+    const btnReload = document.getElementById('btnReloadData');
+    if (btnReload) {
+      const newBtn = btnReload.cloneNode(true);
+      btnReload.replaceWith(newBtn);
+      newBtn.addEventListener('click', async () => {
+        await this.reloadCollectionData();
+      });
+    }
+
+    // Filtro de búsqueda con debounce
     const filterSearch = document.getElementById('filterSearch');
     if (filterSearch) {
-      filterSearch.replaceWith(filterSearch.cloneNode(true));
-      document.getElementById('filterSearch').addEventListener('input', Utils.debounce((e) => {
+      const newSearch = filterSearch.cloneNode(true);
+      filterSearch.replaceWith(newSearch);
+      newSearch.addEventListener('input', Utils.debounce((e) => {
         this.filters.search = e.target.value;
         this.renderCards();
       }, 300));
     }
 
+    // Filtro de categoría
     const filterCategory = document.getElementById('filterCategory');
     if (filterCategory) {
-      filterCategory.replaceWith(filterCategory.cloneNode(true));
-      document.getElementById('filterCategory').addEventListener('change', (e) => {
+      const newFilter = filterCategory.cloneNode(true);
+      filterCategory.replaceWith(newFilter);
+      newFilter.addEventListener('change', (e) => {
         this.filters.category = e.target.value;
         this.renderCards();
       });
     }
 
+    // Filtro de estado
     const filterStatus = document.getElementById('filterStatus');
     if (filterStatus) {
-      filterStatus.replaceWith(filterStatus.cloneNode(true));
-      document.getElementById('filterStatus').addEventListener('change', (e) => {
+      const newFilter = filterStatus.cloneNode(true);
+      filterStatus.replaceWith(newFilter);
+      newFilter.addEventListener('change', (e) => {
         this.filters.status = e.target.value;
         this.renderCards();
       });
     }
 
+    // Botón limpiar filtros
     const btnClearFilters = document.getElementById('btnClearFilters');
     if (btnClearFilters) {
-      btnClearFilters.replaceWith(btnClearFilters.cloneNode(true));
-      document.getElementById('btnClearFilters').addEventListener('click', () => {
+      const newBtn = btnClearFilters.cloneNode(true);
+      btnClearFilters.replaceWith(newBtn);
+      newBtn.addEventListener('click', () => {
         this.filters = { search: '', category: '', status: '' };
         this.renderFilters();
         this.renderCards();
@@ -449,10 +523,12 @@ const UserUI = {
       });
     }
 
+    // Botón cambiar vista
     const btnToggleView = document.getElementById('btnToggleView');
     if (btnToggleView) {
-      btnToggleView.replaceWith(btnToggleView.cloneNode(true));
-      document.getElementById('btnToggleView').addEventListener('click', () => {
+      const newBtn = btnToggleView.cloneNode(true);
+      btnToggleView.replaceWith(newBtn);
+      newBtn.addEventListener('click', () => {
         this.viewMode = this.viewMode === 'album' ? 'list' : 'album';
         this.renderFilters();
         this.renderCards();
@@ -460,107 +536,188 @@ const UserUI = {
       });
     }
 
-    // DELEGACIÓN DE EVENTOS: Contenedor de cromos
-    this.setupCardListenersDelegation();
+    // DELEGACIÓN: Eventos de cromos y grupos
+    this.setupCardsContainerListeners();
   },
 
   /**
-   * Setup listeners de cromos con DELEGACIÓN
-   * Un solo listener en el contenedor padre
+   * Recargar datos de la colección actual (silenciosamente, en background)
+   * Usado por sincronización en tiempo real
    */
-  setupCardListenersDelegation() {
+  async reloadCollectionDataSilently() {
+    if (!this.currentCollectionId) return;
+
+    try {
+      console.log('🔄 Recargando datos en background...');
+      
+      const collection = await API.getCollection(this.currentCollectionId);
+      
+      const [cards, categories, stats] = await Promise.all([
+        API.getUserCards(this.currentCollectionId),
+        API.getCategories(collection.album_id),
+        API.getCollectionStats(this.currentCollectionId)
+      ]);
+      
+      this.currentCards = cards;
+      this.currentCategories = categories;
+      
+      // Actualizar UI sin mostrar loader
+      UI.renderStats(stats, '#collectionStats');
+      this.renderCards();
+      
+      console.log('✅ Datos actualizados en background');
+      
+    } catch (error) {
+      console.error('❌ Error recargando datos en background:', error);
+      // No mostrar error al usuario, es una actualización silenciosa
+    }
+  },
+
+  /**
+   * Recargar datos de la colección actual
+   */
+  async reloadCollectionData() {
+    if (!this.currentCollectionId) return;
+
+    try {
+      Utils.showLoader();
+      
+      const collection = await API.getCollection(this.currentCollectionId);
+      
+      const [cards, categories, stats] = await Promise.all([
+        API.getUserCards(this.currentCollectionId),
+        API.getCategories(collection.album_id),
+        API.getCollectionStats(this.currentCollectionId)
+      ]);
+      
+      this.currentCards = cards;
+      this.currentCategories = categories;
+      
+      // Actualizar UI
+      UI.renderStats(stats, '#collectionStats');
+      this.renderFilters();
+      this.renderCards();
+      this.setupCollectionListeners();
+      
+      Utils.showToast('Datos actualizados', 'success');
+      
+    } catch (error) {
+      console.error('Error reloading collection:', error);
+      Utils.showToast('Error al actualizar datos', 'error');
+    } finally {
+      Utils.hideLoader();
+    }
+  },
+
+  /**
+   * Setup listeners del contenedor de cromos (DELEGACIÓN UNIFICADA)
+   */
+  setupCardsContainerListeners() {
     const container = document.getElementById('cardsContainer');
     if (!container) return;
 
-    // Remover listener anterior
-    container.replaceWith(container.cloneNode(true));
-    const newContainer = document.getElementById('cardsContainer');
+    // Remover listeners anteriores
+    const newContainer = container.cloneNode(true);
+    container.replaceWith(newContainer);
 
-    // DELEGACIÓN: Un solo listener para TODO
+    // ÚNICO LISTENER para clicks
     newContainer.addEventListener('click', async (e) => {
-      // Grupos: Toggle individual
-      const toggleGroup = e.target.closest('[data-action="toggle-group"]');
-      if (toggleGroup) {
+      // 1. ACCIONES DE GRUPOS
+      const groupAction = e.target.closest('[data-group-action]');
+      if (groupAction) {
         e.preventDefault();
-        const groupKey = toggleGroup.dataset.group;
-        CardGrouping.toggleGroup(groupKey);
-        this.renderCards();
+        const action = groupAction.dataset.groupAction;
+        const groupKey = groupAction.dataset.groupKey;
+
+        if (action === 'toggle' && groupKey) {
+          CardGroups.toggle(groupKey);
+          this.renderCards();
+          this.setupCardsContainerListeners();
+        } else if (action === 'expand-all') {
+          const allKeys = Array.from(document.querySelectorAll('[data-group-key]'))
+            .map(el => el.dataset.groupKey)
+            .filter(Boolean);
+          CardGroups.expandAll(allKeys);
+          this.renderCards();
+          this.setupCardsContainerListeners();
+        } else if (action === 'collapse-all') {
+          CardGroups.collapseAll();
+          this.renderCards();
+          this.setupCardsContainerListeners();
+        }
         return;
       }
 
-      // Grupos: Expandir todos
-      const expandAll = e.target.closest('[data-action="expand-all"]');
-      if (expandAll) {
-        e.preventDefault();
-        const allGroups = newContainer.querySelectorAll('[data-group]');
-        const groupKeys = Array.from(allGroups).map(g => g.dataset.group).filter(Boolean);
-        CardGrouping.expandAll(groupKeys);
-        this.renderCards();
-        return;
-      }
-
-      // Grupos: Colapsar todos
-      const collapseAll = e.target.closest('[data-action="collapse-all"]');
-      if (collapseAll) {
-        e.preventDefault();
-        CardGrouping.collapseAll();
-        this.renderCards();
-        return;
-      }
-
-      // Botones de estado
-      const statusBtn = e.target.closest('[data-status]');
-      if (statusBtn) {
+      // 2. ACCIONES DE CROMOS (cambio de estado)
+      const cardAction = e.target.closest('[data-card-action="status"]');
+      if (cardAction) {
         e.stopPropagation();
-        const cardId = statusBtn.dataset.cardId;
-        const status = statusBtn.dataset.status;
+        const cardId = cardAction.dataset.cardId;
+        const status = cardAction.dataset.status;
         await this.updateCardStatus(cardId, status);
         return;
       }
     });
 
-    // Inputs de duplicados
+    // ÚNICO LISTENER para cambios (duplicados)
     newContainer.addEventListener('change', async (e) => {
-      const input = e.target.closest('.mini-duplicates-input, .duplicates-input');
-      if (input) {
-        const cardId = input.dataset.cardId;
-        const count = parseInt(e.target.value) || 0;
+      const duplicatesInput = e.target.closest('[data-card-action="duplicates"]');
+      if (duplicatesInput) {
+        const cardId = duplicatesInput.dataset.cardId;
+        const count = parseInt(duplicatesInput.value) || 0;
         await this.updateCardDuplicates(cardId, count);
-        return;
       }
     });
   },
 
   /**
-   * Actualizar estado de cromo
+   * Actualizar estado de cromo (OPTIMISTA - UX rápida)
    */
   async updateCardStatus(cardId, status) {
+    // Encontrar el cromo
+    const card = this.currentCards.find(c => c.id === cardId);
+    if (!card) return;
+
+    // Guardar estado anterior por si hay error
+    const previousStatus = card.status;
+    const previousDuplicates = card.duplicates_count;
+
     try {
-      // Actualizar en BD
-      await API.updateUserCard(cardId, { status });
+      // 1. ACTUALIZACIÓN OPTIMISTA - Cambiar inmediatamente en la UI
+      card.status = status;
       
-      // Actualizar en estado local
-      const card = this.currentCards.find(c => c.id === cardId);
-      if (card) {
-        card.status = status;
-        
-        // Si cambia a "falta" o "cambiado", resetear duplicados
-        if (status !== 'tengo') {
-          card.duplicates_count = 0;
-          await API.updateUserCard(cardId, { duplicates_count: 0 });
-        }
+      // Si cambia a no-tengo, resetear duplicados
+      if (status !== 'tengo') {
+        card.duplicates_count = 0;
       }
       
-      // Re-renderizar
+      // Renderizar inmediatamente (el usuario ve el cambio al instante)
       this.renderCards();
+      this.setupCardsContainerListeners();
       
-      // Actualizar estadísticas
+      // 2. SINCRONIZAR CON BD - En segundo plano
+      const updateData = { status };
+      if (status !== 'tengo') {
+        updateData.duplicates_count = 0;
+      }
+      
+      await API.updateUserCard(cardId, updateData);
+      
+      // 3. ACTUALIZAR ESTADÍSTICAS - Sin bloquear UI
       const stats = await API.getCollectionStats(this.currentCollectionId);
       UI.renderStats(stats, '#collectionStats');
       
     } catch (error) {
       console.error('Error updating card status:', error);
-      Utils.showToast('Error al actualizar', 'error');
+      
+      // ROLLBACK - Restaurar estado anterior si falla
+      card.status = previousStatus;
+      card.duplicates_count = previousDuplicates;
+      
+      this.renderCards();
+      this.setupCardsContainerListeners();
+      
+      Utils.showToast('Error al actualizar. Se restauró el estado anterior.', 'error');
     }
   },
 
@@ -576,7 +733,6 @@ const UserUI = {
         card.duplicates_count = count;
       }
       
-      // Actualizar estadísticas
       const stats = await API.getCollectionStats(this.currentCollectionId);
       UI.renderStats(stats, '#collectionStats');
       

@@ -379,6 +379,27 @@ const API = {
   },
 
   /**
+   * Desunirse de una colección (eliminar colección personal)
+   */
+  async leaveCollection(collectionId) {
+    try {
+      const userId = Auth.getCurrentUser().id;
+      
+      const { error } = await supabaseClient
+        .from('user_collections')
+        .delete()
+        .eq('id', collectionId)
+        .eq('user_id', userId); // Seguridad: solo puede borrar sus propias colecciones
+
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error('Error leaving collection:', error);
+      throw error;
+    }
+  },
+
+  /**
    * Obtener colección específica
    */
   async getCollection(collectionId) {
@@ -396,6 +417,21 @@ const API = {
       return data;
     } catch (error) {
       console.error('Error getting collection:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Recargar cromos de usuario (obtiene versión actualizada desde master_cards)
+   */
+  async reloadUserCards(collectionId) {
+    try {
+      // Esto forzará a que Supabase recalcule los cromos desde master_cards
+      // Si el trigger está bien configurado, debería sincronizar automáticamente
+      const cards = await this.getUserCards(collectionId);
+      return cards;
+    } catch (error) {
+      console.error('Error reloading user cards:', error);
       throw error;
     }
   },
