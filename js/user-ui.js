@@ -426,7 +426,7 @@ const UserUI = {
         <!-- Contenido central de la tarjeta -->
         <div class="card-content">
           <div class="card-number">${Utils.escapeHtml(card.number)}</div>
-          <div class="card-player-name">${Utils.escapeHtml(card.playerName)}</div>
+          <div class="card-player-name">${Utils.escapeHtml(Utils.capitalizeName(card.playerName))}</div>
           <div class="card-team">${Utils.escapeHtml(card.team || '')}</div>
           ${card.category ? `
             <div class="card-category" style="background: ${card.category.color};">

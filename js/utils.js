@@ -184,6 +184,18 @@ const Utils = {
   },
 
   /**
+   * Capitalizar nombre (Primera letra mayúscula de cada palabra)
+   */
+  capitalizeName(name) {
+    if (!name) return '';
+    return name
+      .toLowerCase()
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  },
+
+  /**
    * Calcular porcentaje de progreso
    */
   calculateProgress(owned, total) {

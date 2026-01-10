@@ -118,9 +118,15 @@ const CardsLists = {
    */
   renderGrouped(cards) {
     const basicCategory = this.currentCategories.find(c => c.is_basic === true);
+    
+    // PASO 1: Ordenar TODOS los cromos por número primero
+    const sortedCards = Utils.sortCards(cards);
+    
+    // PASO 2: Agrupar manteniendo el orden numérico
     const groups = new Map();
+    const groupOrder = []; // Mantener orden de aparición
 
-    cards.forEach(card => {
+    sortedCards.forEach(card => {
       const category = this.currentCategories.find(c => c.id === card.categoryId);
       let groupKey, groupName, groupColor;
 
@@ -142,15 +148,14 @@ const CardsLists = {
           color: groupColor,
           cards: []
         });
+        groupOrder.push(groupKey); // Registrar orden de aparición
       }
 
       groups.get(groupKey).cards.push(card);
     });
 
-    const groupsArray = Array.from(groups.values());
-    
-    // Ordenar grupos
-    groupsArray.sort((a, b) => a.name.localeCompare(b.name));
+    // PASO 3: Crear array de grupos EN ORDEN DE APARICIÓN (orden numérico)
+    const groupsArray = groupOrder.map(key => groups.get(key));
 
     return `
       <div class="grouped-list">
@@ -159,8 +164,8 @@ const CardsLists = {
           <span>Total: <strong>${cards.length}</strong> cromos en <strong>${groupsArray.length}</strong> grupos</span>
         </div>
         ${groupsArray.map(group => {
-          const sortedCards = Utils.sortCards(group.cards);
-          const numbers = sortedCards.map(c => c.number).join(', ');
+          // Los cromos ya vienen ordenados, no re-ordenar
+          const numbers = group.cards.map(c => c.number).join(', ');
           return `
             <div class="list-group">
               <div class="list-group-header">
@@ -203,9 +208,15 @@ const CardsLists = {
    */
   renderGroupedDuplicates(cards) {
     const basicCategory = this.currentCategories.find(c => c.is_basic === true);
+    
+    // PASO 1: Ordenar TODOS los cromos por número primero
+    const sortedCards = Utils.sortCards(cards);
+    
+    // PASO 2: Agrupar manteniendo el orden numérico
     const groups = new Map();
+    const groupOrder = []; // Mantener orden de aparición
 
-    cards.forEach(card => {
+    sortedCards.forEach(card => {
       const category = this.currentCategories.find(c => c.id === card.categoryId);
       let groupKey, groupName, groupColor;
 
@@ -225,13 +236,14 @@ const CardsLists = {
           color: groupColor,
           cards: []
         });
+        groupOrder.push(groupKey); // Registrar orden de aparición
       }
 
       groups.get(groupKey).cards.push(card);
     });
 
-    const groupsArray = Array.from(groups.values());
-    groupsArray.sort((a, b) => a.name.localeCompare(b.name));
+    // PASO 3: Crear array de grupos EN ORDEN DE APARICIÓN (orden numérico)
+    const groupsArray = groupOrder.map(key => groups.get(key));
 
     const totalDuplicates = cards.reduce((sum, c) => sum + c.duplicates_count, 0);
 
@@ -242,8 +254,8 @@ const CardsLists = {
           <span>Total: <strong>${totalDuplicates}</strong> cromos repetidos en <strong>${groupsArray.length}</strong> grupos</span>
         </div>
         ${groupsArray.map(group => {
-          const sortedCards = Utils.sortCards(group.cards);
-          const numbersWithCount = sortedCards.map(c => 
+          // Los cromos ya vienen ordenados, no re-ordenar
+          const numbersWithCount = group.cards.map(c => 
             `${c.number}${c.duplicates_count > 1 ? ` (×${c.duplicates_count})` : ''}`
           ).join(', ');
           const groupTotal = group.cards.reduce((sum, c) => sum + c.duplicates_count, 0);
@@ -316,11 +328,17 @@ const CardsLists = {
       const sortedCards = Utils.sortCards(cards);
       return sortedCards.map(c => c.number).join(', ');
     } else {
-      // Agrupado
+      // Agrupado - MANTENER ORDEN NUMÉRICO
       const basicCategory = this.currentCategories.find(c => c.is_basic === true);
+      
+      // PASO 1: Ordenar todos por número
+      const sortedCards = Utils.sortCards(cards);
+      
+      // PASO 2: Agrupar manteniendo orden
       const groups = new Map();
+      const groupOrder = [];
 
-      cards.forEach(card => {
+      sortedCards.forEach(card => {
         const category = this.currentCategories.find(c => c.id === card.categoryId);
         let groupKey, groupName;
 
@@ -334,17 +352,18 @@ const CardsLists = {
 
         if (!groups.has(groupKey)) {
           groups.set(groupKey, { name: groupName, cards: [] });
+          groupOrder.push(groupKey);
         }
         groups.get(groupKey).cards.push(card);
       });
 
-      const groupsArray = Array.from(groups.values());
-      groupsArray.sort((a, b) => a.name.localeCompare(b.name));
+      // PASO 3: Crear array en orden de aparición (numérico)
+      const groupsArray = groupOrder.map(key => groups.get(key));
 
       return groupsArray.map(group => {
-        const sortedCards = Utils.sortCards(group.cards);
-        const numbers = sortedCards.map(c => c.number).join(', ');
-        return `${group.name} (${group.cards.length}): ${numbers}`;
+        // Ya vienen ordenados, no re-ordenar
+        const numbers = group.cards.map(c => c.number).join(', ');
+        return `${group.name}: ${numbers}`;
       }).join('\n\n');
     }
   },
@@ -359,10 +378,17 @@ const CardsLists = {
         `${c.number}${c.duplicates_count > 1 ? ` (×${c.duplicates_count})` : ''}`
       ).join(', ');
     } else {
+      // Agrupado - MANTENER ORDEN NUMÉRICO
       const basicCategory = this.currentCategories.find(c => c.is_basic === true);
+      
+      // PASO 1: Ordenar todos por número
+      const sortedCards = Utils.sortCards(cards);
+      
+      // PASO 2: Agrupar manteniendo orden
       const groups = new Map();
+      const groupOrder = [];
 
-      cards.forEach(card => {
+      sortedCards.forEach(card => {
         const category = this.currentCategories.find(c => c.id === card.categoryId);
         let groupKey, groupName;
 
@@ -376,20 +402,20 @@ const CardsLists = {
 
         if (!groups.has(groupKey)) {
           groups.set(groupKey, { name: groupName, cards: [] });
+          groupOrder.push(groupKey);
         }
         groups.get(groupKey).cards.push(card);
       });
 
-      const groupsArray = Array.from(groups.values());
-      groupsArray.sort((a, b) => a.name.localeCompare(b.name));
+      // PASO 3: Crear array en orden de aparición (numérico)
+      const groupsArray = groupOrder.map(key => groups.get(key));
 
       return groupsArray.map(group => {
-        const sortedCards = Utils.sortCards(group.cards);
-        const numbersWithCount = sortedCards.map(c => 
+        // Ya vienen ordenados, no re-ordenar
+        const numbersWithCount = group.cards.map(c => 
           `${c.number}${c.duplicates_count > 1 ? ` (×${c.duplicates_count})` : ''}`
         ).join(', ');
-        const groupTotal = group.cards.reduce((sum, c) => sum + c.duplicates_count, 0);
-        return `${group.name} (${groupTotal} repetidos): ${numbersWithCount}`;
+        return `${group.name}: ${numbersWithCount}`;
       }).join('\n\n');
     }
   },
