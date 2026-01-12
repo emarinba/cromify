@@ -364,7 +364,7 @@ const CardsLists = {
         // Ya vienen ordenados, no re-ordenar
         const numbers = group.cards.map(c => c.number).join(', ');
         return `${group.name}: ${numbers}`;
-      }).join('\n\n');
+      }).join('\n'); // UN solo salto de línea (antes: '\n\n')
     }
   },
 
@@ -416,7 +416,7 @@ const CardsLists = {
           `${c.number}${c.duplicates_count > 1 ? ` (×${c.duplicates_count})` : ''}`
         ).join(', ');
         return `${group.name}: ${numbersWithCount}`;
-      }).join('\n\n');
+      }).join('\n'); // UN solo salto de línea (antes: '\n\n')
     }
   },
 

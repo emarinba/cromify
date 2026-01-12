@@ -532,10 +532,10 @@ const AnalyticsUI = {
    * Configurar listeners del analytics
    */
   setupAnalyticsListeners() {
-    const btnBack = document.getElementById('btnBackFromAnalytics');
+    const btnBack = document.getElementById('btnBackToAdmin');
     if (btnBack) {
       btnBack.replaceWith(btnBack.cloneNode(true));
-      document.getElementById('btnBackFromAnalytics').addEventListener('click', () => {
+      document.getElementById('btnBackToAdmin').addEventListener('click', () => {
         AdminUI.showDashboard();
       });
     }

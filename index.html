@@ -158,6 +158,70 @@
         </section>
 
         <!-- ========================================
+             VISTA: ANALYTICS DASHBOARD (Admin)
+             ======================================== -->
+        <section id="viewAnalyticsDashboard" class="view">
+            <div class="container">
+                <div class="view-header">
+                    <button id="btnBackToAdmin" class="btn btn-outline">
+                        <i data-lucide="arrow-left"></i>
+                        Volver al Admin
+                    </button>
+                    <h2>Analytics y Estadísticas</h2>
+                </div>
+
+                <!-- Tarjetas de Resumen -->
+                <div id="analyticsSummaryCards" class="analytics-summary-grid"></div>
+
+                <!-- Gráficos -->
+                <div class="analytics-charts-grid">
+                    <!-- Gráfico de Crecimiento de Usuarios -->
+                    <div class="analytics-chart-card">
+                        <h3>Crecimiento de Usuarios</h3>
+                        <canvas id="userGrowthChart"></canvas>
+                    </div>
+
+                    <!-- Gráfico de Álbumes -->
+                    <div class="analytics-chart-card">
+                        <h3>Álbumes por Usuarios</h3>
+                        <canvas id="albumsChart"></canvas>
+                    </div>
+
+                    <!-- Distribución de Progreso -->
+                    <div class="analytics-chart-card">
+                        <h3>Distribución de Progreso</h3>
+                        <canvas id="progressDistributionChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Tabla de Álbumes -->
+                <div class="analytics-table-card">
+                    <h3>Detalle de Álbumes</h3>
+                    <div id="albumsTableContainer"></div>
+                </div>
+
+                <!-- Actividad Reciente -->
+                <div class="analytics-table-card">
+                    <h3>Actividad Reciente</h3>
+                    <div id="recentActivityContainer"></div>
+                </div>
+
+                <!-- Top Cromos -->
+                <div class="analytics-cards-grid">
+                    <div class="analytics-table-card">
+                        <h3>Cromos Más Coleccionados</h3>
+                        <div id="topCollectedContainer"></div>
+                    </div>
+
+                    <div class="analytics-table-card">
+                        <h3>Cromos Más Repetidos</h3>
+                        <div id="topDuplicatedContainer"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================
              VISTA: GESTOR DE ÁLBUM (Admin)
              ======================================== -->
         <section id="viewAlbumManager" class="view">
