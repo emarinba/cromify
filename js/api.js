@@ -307,7 +307,8 @@ const API = {
     try {
       const userId = Auth.getCurrentUser().id;
       
-      const { data, error } = await supabaseClient
+      // Primero traer las colecciones con sus álbumes
+      const { data: collections, error: collectionsError } = await supabaseClient
         .from('user_collections')
         .select(`
           *,
@@ -316,8 +317,34 @@ const API = {
         .eq('user_id', userId)
         .order('joined_at', { ascending: false });
 
-      if (error) throw error;
-      return data || [];
+      if (collectionsError) throw collectionsError;
+      
+      if (!collections || collections.length === 0) {
+        return [];
+      }
+      
+      // Para cada colección, traer los user_cards del usuario para ese álbum
+      const collectionsWithCards = await Promise.all(
+        collections.map(async (collection) => {
+          const { data: userCards, error: cardsError } = await supabaseClient
+            .from('user_cards')
+            .select('id, master_card_id, status, duplicates_count')
+            .eq('user_id', userId)
+            .eq('collection_id', collection.id);
+          
+          if (cardsError) {
+            console.error('Error getting user cards for collection:', cardsError);
+            return { ...collection, user_cards: [] };
+          }
+          
+          return {
+            ...collection,
+            user_cards: userCards || []
+          };
+        })
+      );
+      
+      return collectionsWithCards;
     } catch (error) {
       console.error('Error getting user collections:', error);
       throw error;

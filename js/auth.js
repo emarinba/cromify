@@ -39,6 +39,9 @@ const Auth = {
         this.currentUser = user;
         this.saveToStorage(user);
         
+        // Cargar perfil completo desde BD
+        await this.loadUserProfile(session.user.id);
+        
         console.log('✅ Usuario guardado en localStorage');
         return true;
       }
@@ -48,6 +51,37 @@ const Auth = {
     } catch (error) {
       console.error('❌ Error initializing auth:', error);
       return false;
+    }
+  },
+
+  /**
+   * Cargar perfil completo del usuario desde la BD
+   */
+  async loadUserProfile(userId) {
+    try {
+      const { data, error } = await supabaseClient
+        .from('users')
+        .select('id, email, role, full_name, nickname, avatar_url')
+        .eq('id', userId)
+        .single();
+
+      if (error) throw error;
+
+      // Actualizar currentUser con datos completos
+      this.currentUser = {
+        ...this.currentUser,
+        full_name: data.full_name,
+        nickname: data.nickname,
+        avatar_url: data.avatar_url,
+        name: data.full_name || data.email.split('@')[0]
+      };
+
+      this.saveToStorage(this.currentUser);
+      return this.currentUser;
+
+    } catch (error) {
+      console.error('Error loading user profile:', error);
+      return this.currentUser;
     }
   },
 
@@ -174,6 +208,9 @@ const Auth = {
       this.currentUser = user;
       this.saveToStorage(user);
       
+      // Cargar perfil completo desde BD
+      await this.loadUserProfile(data.user.id);
+      
       return data;
     } catch (error) {
       console.error('❌ Error en login:', error);
@@ -220,7 +257,7 @@ const Auth = {
       
       // 3. Intentar cerrar sesión en Supabase (puede fallar si no hay sesión)
       try {
-        const { error } = await supabaseClient.auth.signOut();
+        const { error } = await supabaseClient.auth.signOut({ scope: 'local' });
         if (error && error.message !== 'Auth session missing!') {
           console.warn('⚠️ Error cerrando sesión en Supabase:', error.message);
         } else {

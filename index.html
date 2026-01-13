@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestor de Cromos - Multiusuario</title>
+    <title>Cromify - Tu gestor de colecciones</title>
     
     <!-- Supabase JS SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -30,16 +30,36 @@
     <header class="app-header" style="display: none;">
         <div class="container">
             <div class="header-left">
-                <h1>⚽ Gestor de Cromos</h1>
+                <!-- Logo Cromify -->
+                <div class="app-logo">
+                    <svg width="40" height="40" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Rectángulo de cromo base -->
+                        <rect x="15" y="20" width="70" height="60" rx="8" fill="currentColor" opacity="0.15"/>
+                        <!-- Cromo frontal con esquina doblada -->
+                        <path d="M25 30 L75 30 L75 75 Q75 78 72 78 L28 78 Q25 78 25 75 Z" fill="currentColor" opacity="0.3"/>
+                        <!-- Esquina doblada -->
+                        <path d="M75 30 L75 45 L60 30 Z" fill="currentColor" opacity="0.5"/>
+                        <!-- Líneas decorativas (texto simulado) -->
+                        <rect x="35" y="45" width="30" height="3" rx="1.5" fill="currentColor"/>
+                        <rect x="35" y="53" width="25" height="3" rx="1.5" fill="currentColor"/>
+                        <rect x="35" y="61" width="20" height="3" rx="1.5" fill="currentColor"/>
+                        <!-- Estrella/badge -->
+                        <circle cx="50" cy="40" r="8" fill="currentColor"/>
+                        <path d="M50 34 L51.5 38.5 L56 38.5 L52.5 41.5 L54 46 L50 43 L46 46 L47.5 41.5 L44 38.5 L48.5 38.5 Z" fill="white"/>
+                    </svg>
+                    <span class="app-name">Cromify</span>
+                </div>
             </div>
             <div class="header-right">
                 <button id="btnToggleDarkMode" class="btn-theme-toggle" title="Cambiar tema">
                     <i data-lucide="moon" id="iconDarkMode"></i>
                 </button>
                 <div class="user-menu">
-                    <div class="user-photo" id="userAvatar"></div>
-                    <span id="userNameDisplay" class="user-name"></span>
-                    <button id="btnLogout" class="btn-logout">Salir</button>
+                    <button class="user-menu-trigger" id="userMenuTrigger">
+                        <div class="user-photo" id="userAvatar"></div>
+                        <span id="userNameDisplay" class="user-name"></span>
+                        <i data-lucide="chevron-down" class="user-menu-icon"></i>
+                    </button>
                 </div>
             </div>
         </div>
@@ -55,6 +75,20 @@
             <div class="auth-container">
                 <div class="auth-card">
                     <div class="auth-header">
+                        <!-- Logo en auth -->
+                        <div class="auth-logo">
+                            <svg width="60" height="60" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                                <rect x="15" y="20" width="70" height="60" rx="8" fill="#6366F1" opacity="0.15"/>
+                                <path d="M25 30 L75 30 L75 75 Q75 78 72 78 L28 78 Q25 78 25 75 Z" fill="#6366F1" opacity="0.3"/>
+                                <path d="M75 30 L75 45 L60 30 Z" fill="#6366F1" opacity="0.5"/>
+                                <rect x="35" y="45" width="30" height="3" rx="1.5" fill="#6366F1"/>
+                                <rect x="35" y="53" width="25" height="3" rx="1.5" fill="#6366F1"/>
+                                <rect x="35" y="61" width="20" height="3" rx="1.5" fill="#6366F1"/>
+                                <circle cx="50" cy="40" r="8" fill="#6366F1"/>
+                                <path d="M50 34 L51.5 38.5 L56 38.5 L52.5 41.5 L54 46 L50 43 L46 46 L47.5 41.5 L44 38.5 L48.5 38.5 Z" fill="white"/>
+                            </svg>
+                        </div>
+                        <h1 class="auth-brand">Cromify</h1>
                         <h2 id="authTitle">Iniciar Sesión</h2>
                         <p class="auth-subtitle">Gestiona tu colección de cromos</p>
                     </div>
@@ -339,6 +373,150 @@
     </main>
 
     <!-- ========================================
+         MENÚ DE USUARIO (OVERLAY GLOBAL)
+         ======================================== -->
+    <div class="user-menu-overlay" id="userMenuOverlay">
+        <div class="user-menu-dropdown-global" id="userMenuDropdown">
+            <a href="#" id="btnProfile" class="user-menu-item">
+                <i data-lucide="user"></i>
+                <span>Mi Perfil</span>
+            </a>
+            <div class="user-menu-divider"></div>
+            <a href="#" id="btnLogout" class="user-menu-item logout">
+                <i data-lucide="log-out"></i>
+                <span>Cerrar Sesión</span>
+            </a>
+        </div>
+    </div>
+
+        <!-- ========================================
+             VISTA: PERFIL / CUENTA DE USUARIO
+             ======================================== -->
+        <section id="viewProfile" class="view">
+            <div class="container">
+                <div class="view-header">
+                    <button id="btnBackToDashboardFromProfile" class="btn btn-outline">
+                        <i data-lucide="arrow-left"></i>
+                        Volver
+                    </button>
+                    <h2>Mi Perfil</h2>
+                </div>
+
+                <!-- Información Personal -->
+                <div class="profile-section">
+                    <h3 class="profile-section-title">Información Personal</h3>
+                    <div class="profile-card">
+                        <div class="profile-avatar-section">
+                            <div class="profile-avatar-wrapper">
+                                <div class="profile-avatar-large" id="profileAvatarLarge"></div>
+                                <button class="profile-avatar-edit" id="btnEditAvatar" title="Cambiar foto">
+                                    <i data-lucide="camera"></i>
+                                </button>
+                                <input type="file" id="avatarUpload" accept="image/*" style="display: none;">
+                            </div>
+                        </div>
+                        
+                        <div class="profile-info-grid">
+                            <div class="profile-info-item">
+                                <label class="profile-label">Nombre Completo</label>
+                                <div class="profile-value-editable">
+                                    <span id="profileFullName" class="profile-value"></span>
+                                    <button class="btn-icon-sm" id="btnEditFullName" title="Editar">
+                                        <i data-lucide="edit-2"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="profile-info-item">
+                                <label class="profile-label">Nickname</label>
+                                <div class="profile-value-editable">
+                                    <span id="profileNickname" class="profile-value"></span>
+                                    <button class="btn-icon-sm" id="btnEditNickname" title="Editar">
+                                        <i data-lucide="edit-2"></i>
+                                    </button>
+                                </div>
+                                <p class="profile-hint">Tu nickname es único y visible para otros usuarios</p>
+                            </div>
+
+                            <div class="profile-info-item">
+                                <label class="profile-label">Email</label>
+                                <div class="profile-value readonly">
+                                    <i data-lucide="mail" class="profile-icon"></i>
+                                    <span id="profileEmail"></span>
+                                </div>
+                            </div>
+
+                            <div class="profile-info-item">
+                                <label class="profile-label">Contraseña</label>
+                                <div class="profile-value readonly">
+                                    <i data-lucide="lock" class="profile-icon"></i>
+                                    <span>••••••••</span>
+                                </div>
+                                <button class="btn btn-outline btn-sm" id="btnChangePassword">
+                                    <i data-lucide="key"></i>
+                                    Cambiar Contraseña
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mis Colecciones -->
+                <div class="profile-section">
+                    <h3 class="profile-section-title">Mis Colecciones</h3>
+                    <div id="profileCollectionsList" class="profile-collections-grid"></div>
+                </div>
+
+                <!-- Estadísticas Personales -->
+                <div class="profile-section">
+                    <h3 class="profile-section-title">Estadísticas</h3>
+                    <div class="profile-stats-grid">
+                        <div class="profile-stat-card">
+                            <div class="profile-stat-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                                <i data-lucide="folder"></i>
+                            </div>
+                            <div class="profile-stat-content">
+                                <div class="profile-stat-value" id="statTotalCollections">0</div>
+                                <div class="profile-stat-label">Colecciones</div>
+                            </div>
+                        </div>
+
+                        <div class="profile-stat-card">
+                            <div class="profile-stat-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                                <i data-lucide="layers"></i>
+                            </div>
+                            <div class="profile-stat-content">
+                                <div class="profile-stat-value" id="statTotalCards">0</div>
+                                <div class="profile-stat-label">Cromos Totales</div>
+                            </div>
+                        </div>
+
+                        <div class="profile-stat-card">
+                            <div class="profile-stat-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                                <i data-lucide="check-circle"></i>
+                            </div>
+                            <div class="profile-stat-content">
+                                <div class="profile-stat-value" id="statCardsOwned">0</div>
+                                <div class="profile-stat-label">Conseguidos</div>
+                            </div>
+                        </div>
+
+                        <div class="profile-stat-card">
+                            <div class="profile-stat-icon" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                                <i data-lucide="percent"></i>
+                            </div>
+                            <div class="profile-stat-content">
+                                <div class="profile-stat-value" id="statAvgProgress">0%</div>
+                                <div class="profile-stat-label">Progreso Global</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+    <!-- ========================================
          MODALES
          ======================================== -->
 
@@ -526,6 +704,10 @@
                             <i data-lucide="folder"></i>
                             Agrupado
                         </button>
+                        <button type="button" class="btn btn-sm" id="btnMissingCompact">
+                            <i data-lucide="align-left"></i>
+                            Compacto
+                        </button>
                     </div>
                     <button type="button" class="btn btn-secondary btn-sm" id="btnCopyMissing">
                         <i data-lucide="copy"></i>
@@ -557,6 +739,10 @@
                             <i data-lucide="folder"></i>
                             Agrupado
                         </button>
+                        <button type="button" class="btn btn-sm" id="btnDuplicatesCompact">
+                            <i data-lucide="align-left"></i>
+                            Compacto
+                        </button>
                     </div>
                     <button type="button" class="btn btn-secondary btn-sm" id="btnCopyDuplicates">
                         <i data-lucide="copy"></i>
@@ -566,6 +752,76 @@
                 <div class="cards-list-container" id="duplicateCardsContent">
                     <!-- Contenido dinámico -->
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Editar Nombre Completo -->
+    <div id="modalEditFullName" class="modal">
+        <div class="modal-content modal-sm">
+            <div class="modal-header">
+                <h3>Editar Nombre</h3>
+                <button class="modal-close" data-modal="modalEditFullName">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Nombre Completo</label>
+                    <input type="text" id="inputFullName" class="form-control" placeholder="Ej: Juan Pérez">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" data-modal="modalEditFullName">Cancelar</button>
+                <button class="btn btn-primary" id="btnSaveFullName">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Editar Nickname -->
+    <div id="modalEditNickname" class="modal">
+        <div class="modal-content modal-sm">
+            <div class="modal-header">
+                <h3>Editar Nickname</h3>
+                <button class="modal-close" data-modal="modalEditNickname">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Nickname</label>
+                    <input type="text" id="inputNickname" class="form-control" placeholder="Ej: collector123">
+                    <p class="form-hint">Solo letras, números y guiones. Debe ser único.</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" data-modal="modalEditNickname">Cancelar</button>
+                <button class="btn btn-primary" id="btnSaveNickname">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Cambiar Contraseña -->
+    <div id="modalChangePassword" class="modal">
+        <div class="modal-content modal-sm">
+            <div class="modal-header">
+                <h3>Cambiar Contraseña</h3>
+                <button class="modal-close" data-modal="modalChangePassword">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="modal-description">
+                    Te enviaremos un enlace a tu email para que puedas cambiar tu contraseña de forma segura.
+                </p>
+                <div class="form-group">
+                    <label>Email de confirmación</label>
+                    <input type="email" id="inputPasswordEmail" class="form-control" readonly>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" data-modal="modalChangePassword">Cancelar</button>
+                <button class="btn btn-primary" id="btnSendPasswordReset">Enviar Enlace</button>
             </div>
         </div>
     </div>
@@ -591,6 +847,7 @@
     <script src="js/card-groups.js"></script>
     <script src="js/bulk-actions.js"></script>
     <script src="js/cards-lists.js"></script>
+    <script src="js/profile-ui.js"></script>
     <!-- card-grouping.js ELIMINADO - ya no es necesario -->
     <script src="js/admin-ui.js"></script>
     <script src="js/scroll-to-top.js"></script>

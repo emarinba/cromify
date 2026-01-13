@@ -55,7 +55,9 @@ const CardsLists = {
       return;
     }
 
-    if (this.missingMode === 'ungrouped') {
+    if (this.missingMode === 'compact') {
+      container.innerHTML = this.renderCompact(missingCards);
+    } else if (this.missingMode === 'ungrouped') {
       container.innerHTML = this.renderUngrouped(missingCards);
     } else {
       container.innerHTML = this.renderGrouped(missingCards);
@@ -86,7 +88,9 @@ const CardsLists = {
       return;
     }
 
-    if (this.duplicatesMode === 'ungrouped') {
+    if (this.duplicatesMode === 'compact') {
+      container.innerHTML = this.renderCompact(duplicateCards);
+    } else if (this.duplicatesMode === 'ungrouped') {
       container.innerHTML = this.renderUngroupedDuplicates(duplicateCards);
     } else {
       container.innerHTML = this.renderGroupedDuplicates(duplicateCards);
@@ -426,6 +430,7 @@ const CardsLists = {
   setupMissingListeners() {
     const btnUngrouped = document.getElementById('btnMissingUngrouped');
     const btnGrouped = document.getElementById('btnMissingGrouped');
+    const btnCompact = document.getElementById('btnMissingCompact');
     const btnCopy = document.getElementById('btnCopyMissing');
 
     if (btnUngrouped) {
@@ -435,6 +440,7 @@ const CardsLists = {
         this.missingMode = 'ungrouped';
         document.getElementById('btnMissingUngrouped').classList.add('active');
         document.getElementById('btnMissingGrouped').classList.remove('active');
+        document.getElementById('btnMissingCompact')?.classList.remove('active');
         this.renderMissingCards();
       });
     }
@@ -445,6 +451,19 @@ const CardsLists = {
       newBtn.addEventListener('click', () => {
         this.missingMode = 'grouped';
         document.getElementById('btnMissingGrouped').classList.add('active');
+        document.getElementById('btnMissingUngrouped').classList.remove('active');
+        document.getElementById('btnMissingCompact')?.classList.remove('active');
+        this.renderMissingCards();
+      });
+    }
+
+    if (btnCompact) {
+      const newBtn = btnCompact.cloneNode(true);
+      btnCompact.replaceWith(newBtn);
+      newBtn.addEventListener('click', () => {
+        this.missingMode = 'compact';
+        document.getElementById('btnMissingCompact').classList.add('active');
+        document.getElementById('btnMissingGrouped').classList.remove('active');
         document.getElementById('btnMissingUngrouped').classList.remove('active');
         this.renderMissingCards();
       });
@@ -463,6 +482,7 @@ const CardsLists = {
   setupDuplicatesListeners() {
     const btnUngrouped = document.getElementById('btnDuplicatesUngrouped');
     const btnGrouped = document.getElementById('btnDuplicatesGrouped');
+    const btnCompact = document.getElementById('btnDuplicatesCompact');
     const btnCopy = document.getElementById('btnCopyDuplicates');
 
     if (btnUngrouped) {
@@ -472,6 +492,7 @@ const CardsLists = {
         this.duplicatesMode = 'ungrouped';
         document.getElementById('btnDuplicatesUngrouped').classList.add('active');
         document.getElementById('btnDuplicatesGrouped').classList.remove('active');
+        document.getElementById('btnDuplicatesCompact')?.classList.remove('active');
         this.renderDuplicateCards();
       });
     }
@@ -483,6 +504,19 @@ const CardsLists = {
         this.duplicatesMode = 'grouped';
         document.getElementById('btnDuplicatesGrouped').classList.add('active');
         document.getElementById('btnDuplicatesUngrouped').classList.remove('active');
+        document.getElementById('btnDuplicatesCompact')?.classList.remove('active');
+        this.renderDuplicateCards();
+      });
+    }
+
+    if (btnCompact) {
+      const newBtn = btnCompact.cloneNode(true);
+      btnCompact.replaceWith(newBtn);
+      newBtn.addEventListener('click', () => {
+        this.duplicatesMode = 'compact';
+        document.getElementById('btnDuplicatesCompact').classList.add('active');
+        document.getElementById('btnDuplicatesGrouped').classList.remove('active');
+        document.getElementById('btnDuplicatesUngrouped').classList.remove('active');
         this.renderDuplicateCards();
       });
     }
@@ -492,5 +526,50 @@ const CardsLists = {
       btnCopy.replaceWith(newBtn);
       newBtn.addEventListener('click', () => this.copyDuplicatesToClipboard());
     }
+  },
+
+  /**
+   * Renderizar en modo compacto (vista textual agrupada por categorías)
+   * Inspirado en formato: Categoría: 1, 2, 3, 4, 5, ...
+   */
+  renderCompact(cards) {
+    if (cards.length === 0) return '';
+
+    // Agrupar por categoría
+    const groupedByCategory = {};
+    
+    cards.forEach(card => {
+      const categoryName = card.category?.name || 'Sin categoría';
+      if (!groupedByCategory[categoryName]) {
+        groupedByCategory[categoryName] = [];
+      }
+      groupedByCategory[categoryName].push(card.number);
+    });
+
+    // Ordenar categorías alfabéticamente
+    const sortedCategories = Object.keys(groupedByCategory).sort();
+
+    // Renderizar en formato compacto
+    let html = '<div class="cards-list-compact">';
+    
+    sortedCategories.forEach(categoryName => {
+      const numbers = groupedByCategory[categoryName];
+      // Ordenar números (pueden ser alfanuméricos)
+      numbers.sort((a, b) => {
+        const numA = parseInt(a) || 0;
+        const numB = parseInt(b) || 0;
+        if (numA !== numB) return numA - numB;
+        return a.localeCompare(b);
+      });
+      
+      html += `
+        <div class="compact-category-group">
+          <strong>${Utils.escapeHtml(categoryName)}:</strong> ${numbers.join(', ')}
+        </div>
+      `;
+    });
+    
+    html += '</div>';
+    return html;
   }
 };

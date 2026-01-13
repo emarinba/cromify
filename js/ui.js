@@ -20,10 +20,55 @@ const UI = {
    * Configurar event listeners globales
    */
   setupEventListeners() {
+    // Menú de usuario (overlay global)
+    const userMenuTrigger = document.getElementById('userMenuTrigger');
+    const userMenuOverlay = document.getElementById('userMenuOverlay');
+    const userMenuDropdown = document.getElementById('userMenuDropdown');
+    
+    if (userMenuTrigger && userMenuOverlay) {
+      // Click en el trigger abre/cierra el menú
+      userMenuTrigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        userMenuOverlay.classList.toggle('active');
+      });
+      
+      // Click en el overlay (fondo) cierra el menú
+      userMenuOverlay.addEventListener('click', (e) => {
+        if (e.target === userMenuOverlay) {
+          userMenuOverlay.classList.remove('active');
+        }
+      });
+      
+      // ESC cierra el menú
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && userMenuOverlay.classList.contains('active')) {
+          userMenuOverlay.classList.remove('active');
+        }
+      });
+    }
+    
+    // Botón de perfil
+    const btnProfile = document.getElementById('btnProfile');
+    if (btnProfile) {
+      btnProfile.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (userMenuOverlay) {
+          userMenuOverlay.classList.remove('active');
+        }
+        ProfileUI.showProfile();
+      });
+    }
+    
     // Botón de logout
     const btnLogout = document.getElementById('btnLogout');
     if (btnLogout) {
-      btnLogout.addEventListener('click', () => this.handleLogout());
+      btnLogout.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (userMenuOverlay) {
+          userMenuOverlay.classList.remove('active');
+        }
+        this.handleLogout();
+      });
     }
 
     // Botón de modo oscuro

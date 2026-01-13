@@ -347,6 +347,7 @@ const UserUI = {
           <option value="tengo" ${this.filters.status === 'tengo' ? 'selected' : ''}>Lo tengo</option>
           <option value="falta" ${this.filters.status === 'falta' ? 'selected' : ''}>Me falta</option>
           <option value="cambiado" ${this.filters.status === 'cambiado' ? 'selected' : ''}>Cambiado</option>
+          <option value="repetidos" ${this.filters.status === 'repetidos' ? 'selected' : ''}>Repetidos</option>
         </select>
         
         <button id="btnReloadData" class="btn btn-secondary" title="Recargar datos del álbum">
@@ -392,7 +393,12 @@ const UserUI = {
     }
 
     if (this.filters.status) {
-      filtered = filtered.filter(c => c.status === this.filters.status);
+      if (this.filters.status === 'repetidos') {
+        // Filtro especial: solo cromos con repetidos (duplicates_count > 0)
+        filtered = filtered.filter(c => c.duplicates_count > 0);
+      } else {
+        filtered = filtered.filter(c => c.status === this.filters.status);
+      }
     }
 
     // Agrupar cromos
@@ -414,8 +420,13 @@ const UserUI = {
    * Renderizar un cromo (vista álbum) - REDISEÑADO
    */
   renderCard(card) {
+    const hasDuplicates = card.duplicates_count > 0;
+    const duplicatesCount = card.duplicates_count || 0;
+    
     return `
-      <div class="card-album-item status-${card.status}" data-id="${card.id}">
+      <div class="card-album-item status-${card.status}" 
+           data-id="${card.id}"
+           ${hasDuplicates ? `data-has-duplicates="true" data-duplicates-count="${duplicatesCount}"` : ''}>
         <!-- Botón estado izquierdo: FALTA -->
         <div class="card-status-btn left ${card.status === 'falta' ? 'active' : ''}" 
              data-card-action="status" data-card-id="${card.id}" data-status="falta"
@@ -861,6 +872,15 @@ const UserUI = {
       const countElement = cardElement.querySelector('.duplicates-count');
       if (countElement) {
         countElement.textContent = card.duplicates_count || 0;
+      }
+
+      // Actualizar badge visual de repetidos
+      if (card.duplicates_count > 0) {
+        cardElement.setAttribute('data-has-duplicates', 'true');
+        cardElement.setAttribute('data-duplicates-count', card.duplicates_count);
+      } else {
+        cardElement.removeAttribute('data-has-duplicates');
+        cardElement.removeAttribute('data-duplicates-count');
       }
 
       // Actualizar botones +/-
