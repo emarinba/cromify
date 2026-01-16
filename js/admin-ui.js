@@ -59,10 +59,10 @@ const AdminUI = {
               <i data-lucide="settings"></i>
               Gestionar Cromos
             </button>
-            <button class="btn-icon btn-edit-album" data-album-id="${album.id}" title="Editar">
+            <button class="btn-icon btn-edit-album" data-album-id="${album.id}" title="Editar álbum">
               <i data-lucide="edit-2"></i>
             </button>
-            <button class="btn-icon btn-delete-album" data-album-id="${album.id}" title="Eliminar">
+            <button class="btn-icon btn-delete-album" data-album-id="${album.id}" title="Eliminar álbum">
               <i data-lucide="trash-2"></i>
             </button>
           </div>
@@ -71,6 +71,13 @@ const AdminUI = {
     });
 
     this.setupAdminAlbumsListeners();
+    
+    // IMPORTANTE: Forzar renderizado de iconos de Lucide
+    setTimeout(() => {
+      if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+      }
+    }, 100);
   },
 
   /**
@@ -185,19 +192,80 @@ const AdminUI = {
   /**
    * Eliminar álbum
    */
+  /**
+   * Eliminar álbum con confirmación robusta
+   */
   async deleteAlbum(albumId) {
-    if (!Utils.confirm('¿Eliminar este álbum? Se eliminarán todos los cromos y colecciones de usuarios.')) {
-      return;
-    }
-
     try {
-      Utils.showLoader();
+      // PASO 1: Obtener información del álbum
+      const album = await API.getAlbum(albumId);
+      
+      // PASO 2: Obtener estadísticas para mostrar en confirmación
+      const masterCards = await API.getMasterCards(albumId);
+      
+      // Contar cuántos usuarios tienen este álbum
+      const { count: usersCount } = await supabaseClient
+        .from('user_collections')
+        .select('id', { count: 'exact', head: true })
+        .eq('album_id', albumId);
+      
+      // PASO 3: Mensaje de confirmación detallado
+      const confirmMessage = `⚠️ ELIMINAR ÁLBUM: ${album.name}
+
+Esta acción es IRREVERSIBLE y eliminará:
+• El álbum completo
+• ${masterCards.length} cromos maestros
+• ${usersCount || 0} colecciones de usuarios
+• Todos los cromos de usuarios de este álbum
+• Todas las estadísticas relacionadas
+
+❌ NO SE PUEDE DESHACER
+
+¿Estás SEGURO de que quieres eliminar este álbum?`;
+      
+      // Confirmación con mensaje detallado
+      if (!confirm(confirmMessage)) {
+        console.log('[AdminUI] deleteAlbum: Cancelado por usuario');
+        return;
+      }
+      
+      // PASO 4: Segunda confirmación (doble seguridad)
+      const secondConfirm = confirm(
+        `⚠️ ÚLTIMA CONFIRMACIÓN\n\n` +
+        `Escribe "ELIMINAR" en la siguiente ventana para confirmar.`
+      );
+      
+      if (!secondConfirm) {
+        console.log('[AdminUI] deleteAlbum: Cancelado en segunda confirmación');
+        return;
+      }
+      
+      // PASO 5: Validación final (el usuario debe escribir "ELIMINAR")
+      const userInput = prompt(
+        `Para confirmar la eliminación del álbum "${album.name}", escribe:\n\nELIMINAR`
+      );
+      
+      if (userInput !== 'ELIMINAR') {
+        Utils.showToast('Eliminación cancelada', 'info');
+        console.log('[AdminUI] deleteAlbum: Validación fallida');
+        return;
+      }
+      
+      // PASO 6: Proceder con eliminación
+      console.log('[AdminUI] deleteAlbum: Confirmación exitosa, procediendo...');
+      Utils.showLoader('Eliminando álbum y todos sus datos...');
+      
       await API.deleteAlbum(albumId);
-      Utils.showToast('Álbum eliminado', 'success');
+      
+      Utils.showToast(`Álbum "${album.name}" eliminado completamente`, 'success');
+      console.log('[AdminUI] deleteAlbum: ✅ Eliminación completada');
+      
+      // Recargar dashboard
       this.showDashboard();
+      
     } catch (error) {
-      console.error('Error deleting album:', error);
-      Utils.showToast('Error al eliminar álbum', 'error');
+      console.error('[AdminUI] deleteAlbum: Error:', error);
+      Utils.showToast('Error al eliminar álbum: ' + error.message, 'error');
     } finally {
       Utils.hideLoader();
     }

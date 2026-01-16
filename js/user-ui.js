@@ -1,7 +1,46 @@
 /**
  * user-ui.js - Interfaz de Usuario REFACTORIZADA
  * Sistema unificado y consistente de eventos
+ * 
+ * MEJORAS v1.1:
+ * - Sistema de búsqueda inteligente por número (búsqueda parcial)
  */
+
+/**
+ * Función helper para búsqueda inteligente de cromos
+ * Detecta si el input es numérico y ajusta la búsqueda en consecuencia
+ * 
+ * Ejemplos:
+ * - Input "1" → busca números que contengan "1" (1, 10, 12, 21, 101, etc.)
+ * - Input "12" → busca números que contengan "12" (12, 112, 120, 312, etc.)
+ * - Input "messi" → busca en número Y nombre (comportamiento original)
+ * 
+ * @param {Object} card - Cromo a evaluar (debe tener .number y .playerName)
+ * @param {String} searchTerm - Término de búsqueda del usuario
+ * @returns {Boolean} - true si el cromo coincide con la búsqueda
+ */
+function smartCardFilter(card, searchTerm) {
+  if (!searchTerm) return true;
+  
+  const search = searchTerm.toLowerCase().trim();
+  const cardNumber = card.number.toLowerCase();
+  const cardName = card.playerName.toLowerCase();
+  
+  // Detectar si el input contiene SOLO números (permitiendo espacios)
+  const isNumericSearch = /^[\d\s]+$/.test(searchTerm.trim());
+  
+  if (isNumericSearch) {
+    // Búsqueda numérica: solo buscar en el número del cromo
+    // Eliminar espacios del input para búsqueda más flexible
+    const numericInput = search.replace(/\s/g, '');
+    const numericCard = cardNumber.replace(/\s/g, '');
+    
+    return numericCard.includes(numericInput);
+  } else {
+    // Búsqueda de texto: buscar en número Y nombre (comportamiento original)
+    return cardNumber.includes(search) || cardName.includes(search);
+  }
+}
 
 const UserUI = {
   currentCollectionId: null,
@@ -10,6 +49,7 @@ const UserUI = {
   currentCategories: [],
   viewMode: 'album',
   filters: { search: '', category: '', status: '' },
+  joiningAlbum: false, // Prevenir múltiples clicks en botón de unirse
 
   /**
    * Mostrar dashboard de usuario
@@ -17,6 +57,9 @@ const UserUI = {
   async showDashboard() {
     try {
       Utils.showLoader();
+      
+      // Limpiar cache de colecciones para asegurar estado fresco
+      API.clearCollectionCache();
       
       // Desuscribirse de sincronización en tiempo real al salir de colección
       if (RealtimeSync.isActive()) {
@@ -222,15 +265,54 @@ const UserUI = {
    * Unirse a un álbum
    */
   async joinAlbum(albumId) {
+    // Prevenir múltiples llamadas simultáneas
+    if (this.joiningAlbum) {
+      return;
+    }
+
     try {
+      this.joiningAlbum = true;
+      
+      // Deshabilitar el botón visualmente
+      const btn = document.querySelector(`.btn-join-album[data-album-id="${albumId}"]`);
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i data-lucide="loader"></i> Uniéndose...';
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+      }
+
       Utils.showLoader();
       await API.joinCollection(albumId);
-      Utils.showToast('Te has unido al álbum', 'success');
+      Utils.showToast('Te has unido al álbum correctamente', 'success');
       await this.showDashboard();
+      
     } catch (error) {
       console.error('Error joining album:', error);
-      Utils.showToast('Error al unirse al álbum', 'error');
+      
+      // Manejo específico de errores
+      if (error.code === 'ALREADY_JOINED' || error.message?.includes('Ya tienes')) {
+        Utils.showToast('Ya estás unido a este álbum', 'info');
+        // Recargar dashboard para actualizar el estado
+        await this.showDashboard();
+        
+      } else if (error.code === 'CLEANUP_REQUIRED') {
+        Utils.showToast('Datos limpiados. Por favor, vuelve a hacer click en "Unirse".', 'warning');
+        // Limpiar cache y recargar dashboard
+        API.clearCollectionCache(albumId);
+        await this.showDashboard();
+        
+      } else if (error.code === 'RETRY') {
+        Utils.showToast('Error temporal. Por favor, inténtalo de nuevo.', 'warning');
+        // Limpiar cache y recargar dashboard
+        API.clearCollectionCache(albumId);
+        await this.showDashboard();
+        
+      } else {
+        Utils.showToast('No se pudo unir al álbum. Inténtalo de nuevo.', 'error');
+      }
+      
     } finally {
+      this.joiningAlbum = false;
       Utils.hideLoader();
     }
   },
@@ -380,12 +462,9 @@ const UserUI = {
     // Aplicar filtros
     let filtered = [...this.currentCards];
 
+    // Filtro de búsqueda con lógica inteligente
     if (this.filters.search) {
-      const s = this.filters.search.toLowerCase();
-      filtered = filtered.filter(c => 
-        c.number.toLowerCase().includes(s) ||
-        c.playerName.toLowerCase().includes(s)
-      );
+      filtered = filtered.filter(c => smartCardFilter(c, this.filters.search));
     }
 
     if (this.filters.category) {

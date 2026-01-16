@@ -8746,3 +8746,145 @@ body.dark-mode .compact-category-group {
   }
 }
 
+/* ============================================
+   ESTILOS ADICIONALES - Botones Admin
+   ============================================
+   
+   Añadir al final de styles.css o crear archivo separado
+   ============================================ */
+
+/* Asegurar que los botones de acción se vean bien */
+.admin-album-card .album-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* Botones de icono en admin - Mejorados */
+.admin-album-card .btn-icon {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  width: 36px;
+  height: 36px;
+  min-width: 36px; /* Evitar que se comprima */
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.admin-album-card .btn-icon:hover {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.admin-album-card .btn-icon svg,
+.admin-album-card .btn-icon i {
+  width: 18px;
+  height: 18px;
+  stroke-width: 2;
+}
+
+/* Botón de editar - Color específico */
+.admin-album-card .btn-edit-album {
+  background: rgba(59, 130, 246, 0.2);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.admin-album-card .btn-edit-album:hover {
+  background: rgba(59, 130, 246, 0.3);
+  border-color: rgba(59, 130, 246, 0.5);
+}
+
+/* Botón de eliminar - Color específico */
+.admin-album-card .btn-delete-album {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.admin-album-card .btn-delete-album:hover {
+  background: rgba(239, 68, 68, 0.3);
+  border-color: rgba(239, 68, 68, 0.5);
+}
+
+/* Tooltip en hover */
+.admin-album-card .btn-icon::after {
+  content: attr(title);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(-4px);
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.admin-album-card .btn-icon:hover::after {
+  opacity: 1;
+}
+
+/* Responsive - Móvil */
+@media (max-width: 768px) {
+  .admin-album-card .album-actions {
+    justify-content: flex-start;
+    gap: 6px;
+  }
+  
+  .admin-album-card .btn-icon {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+  }
+  
+  .admin-album-card .btn-icon svg,
+  .admin-album-card .btn-icon i {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+/* Modo oscuro */
+body.dark-mode .admin-album-card .btn-icon {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+body.dark-mode .admin-album-card .btn-icon:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+body.dark-mode .admin-album-card .btn-edit-album {
+  background: rgba(96, 165, 250, 0.15);
+  border-color: rgba(96, 165, 250, 0.25);
+}
+
+body.dark-mode .admin-album-card .btn-edit-album:hover {
+  background: rgba(96, 165, 250, 0.25);
+  border-color: rgba(96, 165, 250, 0.4);
+}
+
+body.dark-mode .admin-album-card .btn-delete-album {
+  background: rgba(248, 113, 113, 0.15);
+  border-color: rgba(248, 113, 113, 0.25);
+}
+
+body.dark-mode .admin-album-card .btn-delete-album:hover {
+  background: rgba(248, 113, 113, 0.25);
+  border-color: rgba(248, 113, 113, 0.4);
+}
