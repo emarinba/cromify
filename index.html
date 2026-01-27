@@ -2,857 +2,444 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cromify - Tu gestor de colecciones</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#16a34a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
     
-    <!-- Supabase JS SDK -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <title>Golf Tracker</title>
     
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <!-- Estilos -->
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/auth.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/views.css">
 </head>
 <body>
-    <!-- LOADER -->
-    <div id="loader" class="loader hidden">
-        <div class="loader-spinner"></div>
-    </div>
 
-    <!-- TOAST -->
-    <div id="toast" class="toast"></div>
+    <!-- PANTALLA DE AUTENTICACIÓN -->
+    <div id="auth-screen" class="auth-screen">
+        <div class="auth-container">
+            <!-- LOGIN -->
+            <div id="login-view" class="auth-card">
+                <div class="auth-header">
+                    <div class="auth-logo">⛳</div>
+                    <h1 class="auth-title">Golf Tracker</h1>
+                    <p class="auth-subtitle">Tu gestor personal de partidas</p>
+                </div>
 
-    <!-- HEADER DE LA APP (oculto inicialmente) -->
-    <header class="app-header" style="display: none;">
-        <div class="container">
-            <div class="header-left">
-                <!-- Logo Cromify -->
-                <div class="app-logo">
-                    <svg width="40" height="40" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                        <!-- Rectángulo de cromo base -->
-                        <rect x="15" y="20" width="70" height="60" rx="8" fill="currentColor" opacity="0.15"/>
-                        <!-- Cromo frontal con esquina doblada -->
-                        <path d="M25 30 L75 30 L75 75 Q75 78 72 78 L28 78 Q25 78 25 75 Z" fill="currentColor" opacity="0.3"/>
-                        <!-- Esquina doblada -->
-                        <path d="M75 30 L75 45 L60 30 Z" fill="currentColor" opacity="0.5"/>
-                        <!-- Líneas decorativas (texto simulado) -->
-                        <rect x="35" y="45" width="30" height="3" rx="1.5" fill="currentColor"/>
-                        <rect x="35" y="53" width="25" height="3" rx="1.5" fill="currentColor"/>
-                        <rect x="35" y="61" width="20" height="3" rx="1.5" fill="currentColor"/>
-                        <!-- Estrella/badge -->
-                        <circle cx="50" cy="40" r="8" fill="currentColor"/>
-                        <path d="M50 34 L51.5 38.5 L56 38.5 L52.5 41.5 L54 46 L50 43 L46 46 L47.5 41.5 L44 38.5 L48.5 38.5 Z" fill="white"/>
-                    </svg>
-                    <span class="app-name">Cromify</span>
+                <form id="login-form" class="auth-form" onsubmit="AUTH.handleLogin(event)">
+                    <div class="form-group">
+                        <label for="login-email">Email</label>
+                        <input type="email" id="login-email" class="form-input" placeholder="tu@email.com" required autocomplete="email">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="login-password">Contraseña</label>
+                        <input type="password" id="login-password" class="form-input" placeholder="••••••••" required autocomplete="current-password">
+                    </div>
+
+                    <div id="login-error" class="error-message hidden"></div>
+
+                    <button type="submit" class="btn-primary btn-large" id="login-btn">
+                        Iniciar Sesión
+                    </button>
+                </form>
+
+                <div class="auth-footer">
+                    <p class="auth-switch-text">
+                        ¿No tienes cuenta? 
+                        <a href="#" onclick="AUTH.showRegister(event)" class="auth-link">Regístrate</a>
+                    </p>
                 </div>
             </div>
-            <div class="header-right">
-                <button id="btnToggleDarkMode" class="btn-theme-toggle" title="Cambiar tema">
-                    <i data-lucide="moon" id="iconDarkMode"></i>
-                </button>
-                <div class="user-menu">
-                    <button class="user-menu-trigger" id="userMenuTrigger">
-                        <div class="user-photo" id="userAvatar"></div>
-                        <span id="userNameDisplay" class="user-name"></span>
-                        <i data-lucide="chevron-down" class="user-menu-icon"></i>
+
+            <!-- REGISTRO -->
+            <div id="register-view" class="auth-card hidden">
+                <div class="auth-header">
+                    <div class="auth-logo">⛳</div>
+                    <h1 class="auth-title">Crear cuenta</h1>
+                    <p class="auth-subtitle">Empieza a llevar el control</p>
+                </div>
+
+                <form id="register-form" class="auth-form" onsubmit="AUTH.handleRegister(event)">
+                    <div class="form-group">
+                        <label for="register-email">Email</label>
+                        <input type="email" id="register-email" class="form-input" placeholder="tu@email.com" required autocomplete="email">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="register-password">Contraseña</label>
+                        <input type="password" id="register-password" class="form-input" placeholder="Mínimo 6 caracteres" required autocomplete="new-password" minlength="6">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="register-password-confirm">Confirmar Contraseña</label>
+                        <input type="password" id="register-password-confirm" class="form-input" placeholder="Repite la contraseña" required autocomplete="new-password" minlength="6">
+                    </div>
+
+                    <div id="register-error" class="error-message hidden"></div>
+                    <div id="register-success" class="success-message hidden"></div>
+
+                    <button type="submit" class="btn-primary btn-large" id="register-btn">
+                        Crear Cuenta
                     </button>
+                </form>
+
+                <div class="auth-footer">
+                    <p class="auth-switch-text">
+                        ¿Ya tienes cuenta? 
+                        <a href="#" onclick="AUTH.showLogin(event)" class="auth-link">Inicia sesión</a>
+                    </p>
                 </div>
             </div>
         </div>
-    </header>
+    </div>
 
-    <!-- CONTENEDOR PRINCIPAL -->
-    <main class="main-container">
+    <!-- APLICACIÓN PRINCIPAL -->
+    <div id="app-screen" class="app-screen hidden">
         
-        <!-- ========================================
-             VISTA: AUTENTICACIÓN (Login/Registro)
-             ======================================== -->
-        <section id="viewAuth" class="view active">
-            <div class="auth-container">
-                <div class="auth-card">
-                    <div class="auth-header">
-                        <!-- Logo en auth -->
-                        <div class="auth-logo">
-                            <svg width="60" height="60" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                                <rect x="15" y="20" width="70" height="60" rx="8" fill="#6366F1" opacity="0.15"/>
-                                <path d="M25 30 L75 30 L75 75 Q75 78 72 78 L28 78 Q25 78 25 75 Z" fill="#6366F1" opacity="0.3"/>
-                                <path d="M75 30 L75 45 L60 30 Z" fill="#6366F1" opacity="0.5"/>
-                                <rect x="35" y="45" width="30" height="3" rx="1.5" fill="#6366F1"/>
-                                <rect x="35" y="53" width="25" height="3" rx="1.5" fill="#6366F1"/>
-                                <rect x="35" y="61" width="20" height="3" rx="1.5" fill="#6366F1"/>
-                                <circle cx="50" cy="40" r="8" fill="#6366F1"/>
-                                <path d="M50 34 L51.5 38.5 L56 38.5 L52.5 41.5 L54 46 L50 43 L46 46 L47.5 41.5 L44 38.5 L48.5 38.5 Z" fill="white"/>
+        <!-- HEADER -->
+        <header class="app-header">
+            <div class="header-content">
+                <div class="header-left">
+                    <div class="app-logo">⛳</div>
+                    <h1 class="app-title">Golf Tracker</h1>
+                    
+                    <!-- Navegación Desktop -->
+                    <nav class="header-nav">
+                        <button class="header-nav-item active" data-view="dashboard" onclick="GolfApp.navigate('dashboard')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="3" width="7" height="7"></rect>
+                                <rect x="14" y="3" width="7" height="7"></rect>
+                                <rect x="14" y="14" width="7" height="7"></rect>
+                                <rect x="3" y="14" width="7" height="7"></rect>
                             </svg>
-                        </div>
-                        <h1 class="auth-brand">Cromify</h1>
-                        <h2 id="authTitle">Iniciar Sesión</h2>
-                        <p class="auth-subtitle">Gestiona tu colección de cromos</p>
-                    </div>
-
-                    <!-- Login Form -->
-                    <form id="loginForm" class="auth-form">
-                        <div class="form-group">
-                            <label for="loginEmail">Email</label>
-                            <input type="email" id="loginEmail" required placeholder="tu@email.com" autocomplete="email">
-                        </div>
-                        <div class="form-group">
-                            <label for="loginPassword">Contraseña</label>
-                            <input type="password" id="loginPassword" required placeholder="••••••••" autocomplete="current-password">
-                        </div>
-                        <button type="submit" class="btn btn-primary btn-block">
-                            Iniciar Sesión
+                            <span>Partidas</span>
                         </button>
-                        
-                        <div class="auth-divider">
-                            <span>o</span>
-                        </div>
-                        
-                        <button type="button" id="btnLoginGoogle" class="btn btn-google btn-block">
-                            <svg class="google-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-                                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-                                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-                                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                        <button class="header-nav-item" data-view="courses" onclick="GolfApp.navigate('courses')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M3 21v-4m0 0V5a2 2 0 0 1 2-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 0 0-2 2zm9-13.5V9"></path>
                             </svg>
-                            Continuar con Google
+                            <span>Campos</span>
                         </button>
-                    </form>
-
-                    <!-- Register Form -->
-                    <form id="registerForm" class="auth-form hidden">
-                        <div class="form-group">
-                            <label for="registerName">Nombre</label>
-                            <input type="text" id="registerName" required placeholder="Tu nombre" autocomplete="name">
-                        </div>
-                        <div class="form-group">
-                            <label for="registerEmail">Email</label>
-                            <input type="email" id="registerEmail" required placeholder="tu@email.com" autocomplete="email">
-                        </div>
-                        <div class="form-group">
-                            <label for="registerPassword">Contraseña</label>
-                            <input type="password" id="registerPassword" required placeholder="••••••••" autocomplete="new-password" minlength="6">
-                            <small>Mínimo 6 caracteres</small>
-                        </div>
-                        <button type="submit" class="btn btn-primary btn-block">
-                            Crear Cuenta
-                        </button>
-                        
-                        <div class="auth-divider">
-                            <span>o</span>
-                        </div>
-                        
-                        <button type="button" id="btnRegisterGoogle" class="btn btn-google btn-block">
-                            <svg class="google-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-                                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-                                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-                                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                        <button class="header-nav-item" data-view="game" onclick="GolfApp.navigate('game')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
                             </svg>
-                            Continuar con Google
+                            <span>Nueva Partida</span>
                         </button>
-                    </form>
-
-                    <div class="auth-toggle">
-                        <p id="authToggleText">
-                            ¿No tienes cuenta? 
-                            <span id="toggleAuthMode" style="color: var(--primary); cursor: pointer; font-weight: 600;">
-                                Regístrate
-                            </span>
-                        </p>
+                    </nav>
+                </div>
+                <div class="header-right">
+                    <div class="user-info">
+                        <span class="user-email" id="user-email"></span>
+                        <button class="btn-icon" onclick="GolfApp.logout()" title="Cerrar sesión">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                                <polyline points="16 17 21 12 16 7"></polyline>
+                                <line x1="21" y1="12" x2="9" y2="12"></line>
+                            </svg>
+                        </button>
                     </div>
                 </div>
             </div>
-        </section>
+        </header>
 
-        <!-- ========================================
-             VISTA: DASHBOARD ADMINISTRADOR
-             ======================================== -->
-        <section id="viewAdminDashboard" class="view">
-            <div class="container">
-                <div class="dashboard-header">
-                    <h2>Panel de Administración</h2>
-                    <div class="dashboard-actions">
-                        <button id="btnViewAnalytics" class="btn btn-accent">
-                            <i data-lucide="bar-chart-2"></i>
-                            Analytics
-                        </button>
-                        <button id="btnNewAlbum" class="btn btn-primary">
-                            <i data-lucide="plus-circle"></i>
-                            Nuevo Álbum
-                        </button>
+        <!-- CONTENIDO PRINCIPAL -->
+        <main class="app-main">
+            <div class="main-content">
+                
+                <!-- VISTA: DASHBOARD -->
+                <div id="view-dashboard" class="view-container active">
+                    <div class="view-header">
+                        <h2 class="view-title">Mis Partidas</h2>
                     </div>
-                </div>
-
-                <div id="adminAlbumsGrid" class="albums-grid"></div>
-            </div>
-        </section>
-
-        <!-- ========================================
-             VISTA: ANALYTICS DASHBOARD (Admin)
-             ======================================== -->
-        <section id="viewAnalyticsDashboard" class="view">
-            <div class="container">
-                <div class="view-header">
-                    <button id="btnBackToAdmin" class="btn btn-outline">
-                        <i data-lucide="arrow-left"></i>
-                        Volver al Admin
-                    </button>
-                    <h2>Analytics y Estadísticas</h2>
-                </div>
-
-                <!-- Tarjetas de Resumen -->
-                <div id="analyticsSummaryCards" class="analytics-summary-grid"></div>
-
-                <!-- Gráficos -->
-                <div class="analytics-charts-grid">
-                    <!-- Gráfico de Crecimiento de Usuarios -->
-                    <div class="analytics-chart-card">
-                        <h3>Crecimiento de Usuarios</h3>
-                        <canvas id="userGrowthChart"></canvas>
-                    </div>
-
-                    <!-- Gráfico de Álbumes -->
-                    <div class="analytics-chart-card">
-                        <h3>Álbumes por Usuarios</h3>
-                        <canvas id="albumsChart"></canvas>
-                    </div>
-
-                    <!-- Distribución de Progreso -->
-                    <div class="analytics-chart-card">
-                        <h3>Distribución de Progreso</h3>
-                        <canvas id="progressDistributionChart"></canvas>
-                    </div>
-                </div>
-
-                <!-- Tabla de Álbumes -->
-                <div class="analytics-table-card">
-                    <h3>Detalle de Álbumes</h3>
-                    <div id="albumsTableContainer"></div>
-                </div>
-
-                <!-- Actividad Reciente -->
-                <div class="analytics-table-card">
-                    <h3>Actividad Reciente</h3>
-                    <div id="recentActivityContainer"></div>
-                </div>
-
-                <!-- Top Cromos -->
-                <div class="analytics-cards-grid">
-                    <div class="analytics-table-card">
-                        <h3>Cromos Más Coleccionados</h3>
-                        <div id="topCollectedContainer"></div>
-                    </div>
-
-                    <div class="analytics-table-card">
-                        <h3>Cromos Más Repetidos</h3>
-                        <div id="topDuplicatedContainer"></div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- ========================================
-             VISTA: GESTOR DE ÁLBUM (Admin)
-             ======================================== -->
-        <section id="viewAlbumManager" class="view">
-            <div class="container">
-                <div class="view-header">
-                    <button id="btnBackToAlbums" class="btn btn-outline">
-                        <i data-lucide="arrow-left"></i>
-                        Volver
-                    </button>
-                    <h2 id="albumManagerTitle">Gestionar Álbum</h2>
-                </div>
-
-                <div class="album-manager-layout">
-                    <!-- Sidebar: Categorías -->
-                    <aside class="manager-sidebar">
-                        <div class="sidebar-section">
-                            <div class="section-header">
-                                <h3>Categorías</h3>
-                                <button id="btnNewCategory" class="btn btn-sm btn-primary">
-                                    <i data-lucide="plus"></i>
+                    
+                    <!-- Filtros -->
+                    <div class="filters-section">
+                        <div class="filters-row">
+                            <div class="filter-group">
+                                <label>Campo</label>
+                                <select id="filter-course" class="filter-input" onchange="DashboardView.applyFilters()">
+                                    <option value="">Todos los campos</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <label>Desde</label>
+                                <input type="date" id="filter-date-from" class="filter-input" onchange="DashboardView.applyFilters()">
+                            </div>
+                            <div class="filter-group">
+                                <label>Hasta</label>
+                                <input type="date" id="filter-date-to" class="filter-input" onchange="DashboardView.applyFilters()">
+                            </div>
+                            <div class="filter-actions">
+                                <button class="btn-secondary btn-sm" onclick="DashboardView.clearFilters()">
+                                    Limpiar
                                 </button>
                             </div>
-                            <div id="categoriesList" class="categories-list"></div>
                         </div>
-                    </aside>
+                    </div>
+                    
+                    <div class="games-grid" id="games-list"></div>
 
-                    <!-- Main: Cromos -->
-                    <main class="manager-main">
-                        <div class="manager-toolbar">
-                            <button id="btnNewCard" class="btn btn-primary">
-                                <i data-lucide="plus"></i>
-                                Nuevo Cromo
-                            </button>
-                            <button id="btnImportCards" class="btn btn-outline">
-                                <i data-lucide="download"></i>
-                                Importar
-                            </button>
-                            <button id="btnBulkCategory" class="btn btn-outline">
-                                <i data-lucide="layers"></i>
-                                Cambio Masivo
-                            </button>
-                        </div>
-
-                        <div id="masterCardsList"></div>
-                    </main>
-                </div>
-            </div>
-        </section>
-
-        <!-- ========================================
-             VISTA: DASHBOARD USUARIO
-             ======================================== -->
-        <section id="viewUserDashboard" class="view">
-            <div class="container">
-                <div class="dashboard-header">
-                    <div>
-                        <h2>Mi Dashboard</h2>
-                        <p class="dashboard-subtitle">Gestiona tus colecciones</p>
+                    <div id="empty-state" class="empty-state hidden">
+                        <div class="empty-icon">⛳</div>
+                        <h3 class="empty-title">Aún no tienes partidas</h3>
+                        <p class="empty-text">Registra tu primera partida para empezar</p>
+                        <button class="btn-primary" onclick="GolfApp.navigate('game')">Nueva Partida</button>
+                    </div>
+                    
+                    <div id="no-results-state" class="empty-state hidden">
+                        <div class="empty-icon">🔍</div>
+                        <h3 class="empty-title">No hay resultados</h3>
+                        <p class="empty-text">No se encontraron partidas con estos filtros</p>
+                        <button class="btn-secondary" onclick="DashboardView.clearFilters()">Limpiar filtros</button>
                     </div>
                 </div>
 
-                <!-- Estadísticas generales -->
-                <div id="userGeneralStats"></div>
-
-                <!-- Mis colecciones -->
-                <section class="dashboard-section">
-                    <h3>Mis Colecciones</h3>
-                    <div id="myCollectionsList" class="collections-grid"></div>
-                </section>
-
-                <!-- Álbumes disponibles -->
-                <section class="dashboard-section">
-                    <h3>Álbumes Disponibles</h3>
-                    <div id="availableAlbumsList" class="albums-available-grid"></div>
-                </section>
-            </div>
-        </section>
-
-        <!-- ========================================
-             VISTA: COLECCIÓN DE USUARIO
-             ======================================== -->
-        <section id="viewCollection" class="view">
-            <div class="container">
-                <div class="collection-header">
+                <!-- VISTA: CAMPOS -->
+                <div id="view-courses" class="view-container">
                     <div class="view-header">
-                        <button id="btnBackToDashboard" class="btn btn-outline">
-                            <i data-lucide="arrow-left"></i>
+                        <h2 class="view-title">Campos de Golf</h2>
+                        <button class="btn-primary btn-sm" onclick="CoursesView.openCreateModal()">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Nuevo Campo
+                        </button>
+                    </div>
+                    
+                    <div class="courses-grid" id="courses-list"></div>
+
+                    <div id="courses-empty" class="empty-state hidden">
+                        <div class="empty-icon">🏌️</div>
+                        <h3 class="empty-title">No hay campos registrados</h3>
+                        <p class="empty-text">Añade tu primer campo</p>
+                        <button class="btn-primary" onclick="CoursesView.openCreateModal()">Crear Campo</button>
+                    </div>
+                </div>
+
+                <!-- VISTA: NUEVA PARTIDA -->
+                <div id="view-game" class="view-container">
+                    <div class="view-header">
+                        <button class="btn-back" onclick="GolfApp.navigate('dashboard')">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="19" y1="12" x2="5" y2="12"></line>
+                                <polyline points="12 19 5 12 12 5"></polyline>
+                            </svg>
                             Volver
                         </button>
-                        <h2 id="collectionTitle">Mi Colección</h2>
-                        <div class="header-actions">
-                            <button id="btnShowMissing" class="btn btn-secondary">
-                                <i data-lucide="list-x"></i>
-                                Faltantes
+                        <h2 class="view-title" id="game-view-title">Nueva Partida</h2>
+                    </div>
+
+                    <div class="game-form">
+                        <div class="game-info-section">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Campo</label>
+                                    <select id="game-course-select" class="form-input" onchange="GameView.onCourseChange()">
+                                        <option value="">Selecciona un campo</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Fecha</label>
+                                    <input type="date" id="game-date" class="form-input">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Nombre (opcional)</label>
+                                    <input type="text" id="game-name" class="form-input" placeholder="Ej: Torneo Club">
+                                </div>
+                                <div class="form-group">
+                                    <label>Hándicap</label>
+                                    <input type="number" id="game-handicap" class="form-input" value="20" min="0" max="54">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="holes-section">
+                            <div class="holes-header">
+                                <h3>Tarjeta de juego</h3>
+                            </div>
+                            <div class="holes-container" id="holes-container"></div>
+                        </div>
+
+                        <!-- Totales (colapsable) -->
+                        <div class="game-totals-wrapper">
+                            <button class="game-totals-toggle" onclick="GameView.toggleTotals()">
+                                <span class="totals-toggle-text">
+                                    <span id="totals-summary-text">Ver resumen</span>
+                                    <span class="totals-quick-view">
+                                        <strong id="quick-total-scr">0</strong> SCR • 
+                                        <strong id="quick-total-hcp">0</strong> HCP
+                                    </span>
+                                </span>
+                                <svg id="totals-toggle-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="6 9 12 15 18 9"></polyline>
+                                </svg>
                             </button>
-                            <button id="btnShowDuplicates" class="btn btn-secondary">
-                                <i data-lucide="layers"></i>
-                                Repetidos
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Estadísticas -->
-                <div id="collectionStats"></div>
-
-                <!-- Filtros y controles -->
-                <div id="collectionFilters"></div>
-
-                <!-- Cromos -->
-                <div id="cardsContainer"></div>
-            </div>
-        </section>
-
-    </main>
-
-    <!-- ========================================
-         MENÚ DE USUARIO (OVERLAY GLOBAL)
-         ======================================== -->
-    <div class="user-menu-overlay" id="userMenuOverlay">
-        <div class="user-menu-dropdown-global" id="userMenuDropdown">
-            <a href="#" id="btnProfile" class="user-menu-item">
-                <i data-lucide="user"></i>
-                <span>Mi Perfil</span>
-            </a>
-            <div class="user-menu-divider"></div>
-            <a href="#" id="btnLogout" class="user-menu-item logout">
-                <i data-lucide="log-out"></i>
-                <span>Cerrar Sesión</span>
-            </a>
-        </div>
-    </div>
-
-        <!-- ========================================
-             VISTA: PERFIL / CUENTA DE USUARIO
-             ======================================== -->
-        <section id="viewProfile" class="view">
-            <div class="container">
-                <div class="view-header">
-                    <button id="btnBackToDashboardFromProfile" class="btn btn-outline">
-                        <i data-lucide="arrow-left"></i>
-                        Volver
-                    </button>
-                    <h2>Mi Perfil</h2>
-                </div>
-
-                <!-- Información Personal -->
-                <div class="profile-section">
-                    <h3 class="profile-section-title">Información Personal</h3>
-                    <div class="profile-card">
-                        <div class="profile-avatar-section">
-                            <div class="profile-avatar-wrapper">
-                                <div class="profile-avatar-large" id="profileAvatarLarge"></div>
-                                <button class="profile-avatar-edit" id="btnEditAvatar" title="Cambiar foto">
-                                    <i data-lucide="camera"></i>
-                                </button>
-                                <input type="file" id="avatarUpload" accept="image/*" style="display: none;">
-                            </div>
-                        </div>
-                        
-                        <div class="profile-info-grid">
-                            <div class="profile-info-item">
-                                <label class="profile-label">Nombre Completo</label>
-                                <div class="profile-value-editable">
-                                    <span id="profileFullName" class="profile-value"></span>
-                                    <button class="btn-icon-sm" id="btnEditFullName" title="Editar">
-                                        <i data-lucide="edit-2"></i>
-                                    </button>
+                            
+                            <div class="game-totals collapsed" id="game-totals">
+                            <div class="totals-section">
+                                <h4>Primeros 9</h4>
+                                <div class="totals-grid">
+                                    <div class="total-item">
+                                        <span class="total-label">Golpes</span>
+                                        <span class="total-value" id="total-front-strokes">0</span>
+                                    </div>
+                                    <div class="total-item">
+                                        <span class="total-label">SCR</span>
+                                        <span class="total-value" id="total-front-scr">0</span>
+                                    </div>
+                                    <div class="total-item">
+                                        <span class="total-label">HCP</span>
+                                        <span class="total-value" id="total-front-hcp">0</span>
+                                    </div>
                                 </div>
                             </div>
 
-                            <div class="profile-info-item">
-                                <label class="profile-label">Nickname</label>
-                                <div class="profile-value-editable">
-                                    <span id="profileNickname" class="profile-value"></span>
-                                    <button class="btn-icon-sm" id="btnEditNickname" title="Editar">
-                                        <i data-lucide="edit-2"></i>
-                                    </button>
+                            <div class="totals-section">
+                                <h4>Últimos 9</h4>
+                                <div class="totals-grid">
+                                    <div class="total-item">
+                                        <span class="total-label">Golpes</span>
+                                        <span class="total-value" id="total-back-strokes">0</span>
+                                    </div>
+                                    <div class="total-item">
+                                        <span class="total-label">SCR</span>
+                                        <span class="total-value" id="total-back-scr">0</span>
+                                    </div>
+                                    <div class="total-item">
+                                        <span class="total-label">HCP</span>
+                                        <span class="total-value" id="total-back-hcp">0</span>
+                                    </div>
                                 </div>
-                                <p class="profile-hint">Tu nickname es único y visible para otros usuarios</p>
                             </div>
 
-                            <div class="profile-info-item">
-                                <label class="profile-label">Email</label>
-                                <div class="profile-value readonly">
-                                    <i data-lucide="mail" class="profile-icon"></i>
-                                    <span id="profileEmail"></span>
+                            <div class="totals-section totals-final">
+                                <h4>Total 18</h4>
+                                <div class="totals-grid">
+                                    <div class="total-item">
+                                        <span class="total-label">Golpes</span>
+                                        <span class="total-value" id="total-strokes">0</span>
+                                    </div>
+                                    <div class="total-item">
+                                        <span class="total-label">SCR</span>
+                                        <span class="total-value" id="total-scr">0</span>
+                                    </div>
+                                    <div class="total-item">
+                                        <span class="total-label">HCP</span>
+                                        <span class="total-value" id="total-hcp">0</span>
+                                    </div>
                                 </div>
                             </div>
+                        </div>
+                        </div>
 
-                            <div class="profile-info-item">
-                                <label class="profile-label">Contraseña</label>
-                                <div class="profile-value readonly">
-                                    <i data-lucide="lock" class="profile-icon"></i>
-                                    <span>••••••••</span>
-                                </div>
-                                <button class="btn btn-outline btn-sm" id="btnChangePassword">
-                                    <i data-lucide="key"></i>
-                                    Cambiar Contraseña
-                                </button>
-                            </div>
+                        <div class="game-actions">
+                            <button class="btn-secondary btn-large" onclick="GolfApp.navigate('dashboard')">Cancelar</button>
+                            <button class="btn-primary btn-large" id="save-game-btn" onclick="GameView.saveGame()">Guardar Partida</button>
                         </div>
                     </div>
                 </div>
 
-                <!-- Mis Colecciones -->
-                <div class="profile-section">
-                    <h3 class="profile-section-title">Mis Colecciones</h3>
-                    <div id="profileCollectionsList" class="profile-collections-grid"></div>
-                </div>
-
-                <!-- Estadísticas Personales -->
-                <div class="profile-section">
-                    <h3 class="profile-section-title">Estadísticas</h3>
-                    <div class="profile-stats-grid">
-                        <div class="profile-stat-card">
-                            <div class="profile-stat-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-                                <i data-lucide="folder"></i>
-                            </div>
-                            <div class="profile-stat-content">
-                                <div class="profile-stat-value" id="statTotalCollections">0</div>
-                                <div class="profile-stat-label">Colecciones</div>
-                            </div>
-                        </div>
-
-                        <div class="profile-stat-card">
-                            <div class="profile-stat-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
-                                <i data-lucide="layers"></i>
-                            </div>
-                            <div class="profile-stat-content">
-                                <div class="profile-stat-value" id="statTotalCards">0</div>
-                                <div class="profile-stat-label">Cromos Totales</div>
-                            </div>
-                        </div>
-
-                        <div class="profile-stat-card">
-                            <div class="profile-stat-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
-                                <i data-lucide="check-circle"></i>
-                            </div>
-                            <div class="profile-stat-content">
-                                <div class="profile-stat-value" id="statCardsOwned">0</div>
-                                <div class="profile-stat-label">Conseguidos</div>
-                            </div>
-                        </div>
-
-                        <div class="profile-stat-card">
-                            <div class="profile-stat-icon" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
-                                <i data-lucide="percent"></i>
-                            </div>
-                            <div class="profile-stat-content">
-                                <div class="profile-stat-value" id="statAvgProgress">0%</div>
-                                <div class="profile-stat-label">Progreso Global</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
             </div>
-        </section>
+        </main>
 
+        <!-- NAVEGACIÓN MÓVIL -->
+        <nav class="mobile-nav">
+            <button class="mobile-nav-item active" data-view="dashboard" onclick="GolfApp.navigate('dashboard')">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="14" width="7" height="7"></rect>
+                    <rect x="3" y="14" width="7" height="7"></rect>
+                </svg>
+                <span>Partidas</span>
+            </button>
+            <button class="mobile-nav-item mobile-nav-fab" onclick="GolfApp.navigate('game')">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+            </button>
+            <button class="mobile-nav-item" data-view="courses" onclick="GolfApp.navigate('courses')">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                </svg>
+                <span>Campos</span>
+            </button>
+        </nav>
 
-    <!-- ========================================
-         MODALES
-         ======================================== -->
-
-    <!-- Modal: Álbum (Admin) -->
-    <div id="modalAlbum" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="modalAlbumTitle">Nuevo Álbum</h3>
-                <button class="btn-close" data-close="modalAlbum">×</button>
-            </div>
-            <form id="formAlbum">
-                <div class="modal-body">
-                    <div class="form-group">
-                        <label for="albumName">Nombre *</label>
-                        <input type="text" id="albumName" required placeholder="Ej: LaLiga 2024-25">
-                    </div>
-                    <div class="form-group">
-                        <label for="albumSeason">Temporada</label>
-                        <input type="text" id="albumSeason" placeholder="Ej: 2024-25">
-                    </div>
-                    <div class="form-group">
-                        <label for="albumCompetition">Competición</label>
-                        <input type="text" id="albumCompetition" placeholder="Ej: LaLiga EA Sports">
-                    </div>
-                    <div class="form-group">
-                        <label for="albumColor">Color</label>
-                        <input type="color" id="albumColor" value="#10B981">
-                    </div>
-                </div>
-                <div class="modal-actions">
-                    <button type="button" class="btn btn-secondary" data-close="modalAlbum">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Guardar</button>
-                </div>
-            </form>
-        </div>
     </div>
 
-    <!-- Modal: Categoría (Admin) -->
-    <div id="modalCategory" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Nueva Categoría</h3>
-                <button class="btn-close" data-close="modalCategory">×</button>
-            </div>
-            <form id="formCategory">
-                <div class="modal-body">
-                    <div class="form-group">
-                        <label for="categoryName">Nombre *</label>
-                        <input type="text" id="categoryName" required placeholder="Ej: Porteros">
-                    </div>
-                    <div class="form-group">
-                        <label for="categoryColor">Color</label>
-                        <input type="color" id="categoryColor" value="#10B981">
-                    </div>
-                </div>
-                <div class="modal-actions">
-                    <button type="button" class="btn btn-secondary" data-close="modalCategory">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Guardar</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Modal: Cromo (Admin) -->
-    <div id="modalCard" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="modalCardTitle">Nuevo Cromo</h3>
-                <button class="btn-close" data-close="modalCard">×</button>
-            </div>
-            <form id="formCard">
-                <div class="modal-body">
-                    <div class="form-group">
-                        <label for="cardNumber">Número *</label>
-                        <input type="text" id="cardNumber" required placeholder="1">
-                    </div>
-                    <div class="form-group">
-                        <label for="cardPlayer">Jugador *</label>
-                        <input type="text" id="cardPlayer" required placeholder="Nombre del jugador">
-                    </div>
-                    <div class="form-group">
-                        <label for="cardTeam">Equipo</label>
-                        <input type="text" id="cardTeam" placeholder="Nombre del equipo">
-                    </div>
-                    <div class="form-group">
-                        <label for="cardCategory">Categoría</label>
-                        <select id="cardCategory">
-                            <option value="">Sin categoría</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="modal-actions">
-                    <button type="button" class="btn btn-secondary" data-close="modalCard">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Guardar</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Modal: Importar (Admin) -->
-    <div id="modalImport" class="modal">
+    <!-- MODALES -->
+    
+    <!-- Modal: Detalle de Partida -->
+    <div id="game-detail-modal" class="modal">
+        <div class="modal-overlay" onclick="GolfApp.closeModal('game-detail-modal')"></div>
         <div class="modal-content modal-large">
             <div class="modal-header">
-                <h3>Importar Cromos</h3>
-                <button class="btn-close" data-close="modalImport">×</button>
+                <h3 class="modal-title" id="detail-modal-title">Detalle</h3>
+                <button class="modal-close" onclick="GolfApp.closeModal('game-detail-modal')">×</button>
             </div>
-            <form id="formImport">
-                <div class="modal-body">
-                    <div class="form-group">
-                        <label>Formato</label>
-                        <select id="importFormat">
-                            <option value="csv">CSV</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Archivo o Texto</label>
-                        <input type="file" id="importFile" accept=".csv,.txt">
-                        <textarea id="importText" rows="10" placeholder="O pega aquí el contenido..."></textarea>
-                    </div>
-                    <div class="help-text">
-                        <strong>Formato CSV:</strong><br>
-                        <code>número,jugador,equipo</code><br>
-                        <small>Ejemplo: 1,Courtois,Real Madrid</small>
-                    </div>
-                </div>
-                <div class="modal-actions">
-                    <button type="button" class="btn btn-secondary" data-close="modalImport">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Importar</button>
-                </div>
-            </form>
+            <div class="modal-body" id="detail-modal-body"></div>
         </div>
     </div>
 
-    <!-- Modal: Cambio Masivo de Categoría (Admin) -->
-    <div id="modalBulkCategory" class="modal">
+    <!-- Modal: Campo -->
+    <div id="course-modal" class="modal">
+        <div class="modal-overlay" onclick="GolfApp.closeModal('course-modal')"></div>
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Cambio Masivo de Categoría</h3>
-                <button class="btn-close" data-close="modalBulkCategory">×</button>
+                <h3 class="modal-title" id="course-modal-title">Nuevo Campo</h3>
+                <button class="modal-close" onclick="GolfApp.closeModal('course-modal')">×</button>
             </div>
-            <form id="formBulkCategory">
-                <div class="modal-body">
+            <div class="modal-body">
+                <form id="course-form" onsubmit="CoursesView.saveCourse(event)">
+                    <input type="hidden" id="course-id">
+                    
                     <div class="form-group">
-                        <label>Desde número</label>
-                        <input type="text" id="bulkFromNumber" required placeholder="Ej: 1">
+                        <label>Nombre del campo *</label>
+                        <input type="text" id="course-name" class="form-input" placeholder="Club de Golf Madrid" required>
                     </div>
+
                     <div class="form-group">
-                        <label>Hasta número</label>
-                        <input type="text" id="bulkToNumber" required placeholder="Ej: 20">
+                        <label>Localización</label>
+                        <input type="text" id="course-location" class="form-input" placeholder="Madrid, España">
                     </div>
-                    <div class="form-group">
-                        <label>Nueva categoría</label>
-                        <select id="bulkCategorySelect" required>
-                            <option value="">Selecciona una categoría</option>
-                        </select>
+
+                    <div class="form-section">
+                        <h4>Configuración de hoyos</h4>
+                        <div class="course-holes-grid" id="course-holes-grid"></div>
                     </div>
-                    <div class="help-text">
-                        <i data-lucide="info"></i>
-                        Se aplicará la categoría seleccionada a todos los cromos en el rango especificado.
+
+                    <div class="modal-actions">
+                        <button type="button" class="btn-secondary" onclick="GolfApp.closeModal('course-modal')">Cancelar</button>
+                        <button type="submit" class="btn-primary">Guardar Campo</button>
                     </div>
-                </div>
-                <div class="modal-actions">
-                    <button type="button" class="btn btn-secondary" data-close="modalBulkCategory">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Aplicar Cambios</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Modal: Cromos Faltantes (Usuario) -->
-    <div id="modalMissingCards" class="modal">
-        <div class="modal-content modal-large">
-            <div class="modal-header">
-                <h3>📋 Cromos Faltantes</h3>
-                <button class="btn-close" data-close="modalMissingCards">×</button>
-            </div>
-            <div class="modal-body">
-                <div class="modal-toolbar">
-                    <div class="btn-group">
-                        <button type="button" class="btn btn-sm" id="btnMissingUngrouped">
-                            <i data-lucide="list"></i>
-                            Sin agrupar
-                        </button>
-                        <button type="button" class="btn btn-sm active" id="btnMissingGrouped">
-                            <i data-lucide="folder"></i>
-                            Agrupado
-                        </button>
-                        <button type="button" class="btn btn-sm" id="btnMissingCompact">
-                            <i data-lucide="align-left"></i>
-                            Compacto
-                        </button>
-                    </div>
-                    <button type="button" class="btn btn-secondary btn-sm" id="btnCopyMissing">
-                        <i data-lucide="copy"></i>
-                        Copiar al portapapeles
-                    </button>
-                </div>
-                <div class="cards-list-container" id="missingCardsContent">
-                    <!-- Contenido dinámico -->
-                </div>
+                </form>
             </div>
         </div>
     </div>
 
-    <!-- Modal: Cromos Repetidos (Usuario) -->
-    <div id="modalDuplicateCards" class="modal">
-        <div class="modal-content modal-large">
-            <div class="modal-header">
-                <h3>🔄 Cromos Repetidos</h3>
-                <button class="btn-close" data-close="modalDuplicateCards">×</button>
-            </div>
-            <div class="modal-body">
-                <div class="modal-toolbar">
-                    <div class="btn-group">
-                        <button type="button" class="btn btn-sm" id="btnDuplicatesUngrouped">
-                            <i data-lucide="list"></i>
-                            Sin agrupar
-                        </button>
-                        <button type="button" class="btn btn-sm active" id="btnDuplicatesGrouped">
-                            <i data-lucide="folder"></i>
-                            Agrupado
-                        </button>
-                        <button type="button" class="btn btn-sm" id="btnDuplicatesCompact">
-                            <i data-lucide="align-left"></i>
-                            Compacto
-                        </button>
-                    </div>
-                    <button type="button" class="btn btn-secondary btn-sm" id="btnCopyDuplicates">
-                        <i data-lucide="copy"></i>
-                        Copiar al portapapeles
-                    </button>
-                </div>
-                <div class="cards-list-container" id="duplicateCardsContent">
-                    <!-- Contenido dinámico -->
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal: Editar Nombre Completo -->
-    <div id="modalEditFullName" class="modal">
-        <div class="modal-content modal-sm">
-            <div class="modal-header">
-                <h3>Editar Nombre</h3>
-                <button class="modal-close" data-modal="modalEditFullName">
-                    <i data-lucide="x"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label>Nombre Completo</label>
-                    <input type="text" id="inputFullName" class="form-control" placeholder="Ej: Juan Pérez">
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-outline" data-modal="modalEditFullName">Cancelar</button>
-                <button class="btn btn-primary" id="btnSaveFullName">Guardar</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal: Editar Nickname -->
-    <div id="modalEditNickname" class="modal">
-        <div class="modal-content modal-sm">
-            <div class="modal-header">
-                <h3>Editar Nickname</h3>
-                <button class="modal-close" data-modal="modalEditNickname">
-                    <i data-lucide="x"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label>Nickname</label>
-                    <input type="text" id="inputNickname" class="form-control" placeholder="Ej: collector123">
-                    <p class="form-hint">Solo letras, números y guiones. Debe ser único.</p>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-outline" data-modal="modalEditNickname">Cancelar</button>
-                <button class="btn btn-primary" id="btnSaveNickname">Guardar</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal: Cambiar Contraseña -->
-    <div id="modalChangePassword" class="modal">
-        <div class="modal-content modal-sm">
-            <div class="modal-header">
-                <h3>Cambiar Contraseña</h3>
-                <button class="modal-close" data-modal="modalChangePassword">
-                    <i data-lucide="x"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <p class="modal-description">
-                    Te enviaremos un enlace a tu email para que puedas cambiar tu contraseña de forma segura.
-                </p>
-                <div class="form-group">
-                    <label>Email de confirmación</label>
-                    <input type="email" id="inputPasswordEmail" class="form-control" readonly>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-outline" data-modal="modalChangePassword">Cancelar</button>
-                <button class="btn btn-primary" id="btnSendPasswordReset">Enviar Enlace</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Botón scroll to top -->
-    <button id="scrollTopBtn" class="scroll-top-btn" title="Volver arriba">
-        <i data-lucide="arrow-up"></i>
-    </button>
-
-    <!-- ========================================
-         SCRIPTS
-         ======================================== -->
-    <!-- ========================================
-         SCRIPTS - ORDEN CORRECTO
-         ======================================== -->
-    <script src="supabase-client.js"></script>
-    <script src="js/utils.js"></script>
+    <!-- SCRIPTS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-client.js"></script>
     <script src="js/auth.js"></script>
-    <script src="js/api.js"></script>
-    <script src="js/analytics-api.js"></script>
-    <script src="js/realtime-sync.js"></script>
-    <script src="js/ui.js"></script>
-    <script src="js/card-groups.js"></script>
-    <script src="js/bulk-actions.js"></script>
-    <script src="js/cards-lists.js"></script>
-    <script src="js/profile-ui.js"></script>
-    <!-- card-grouping.js ELIMINADO - ya no es necesario -->
-    <script src="js/admin-ui.js"></script>
-    <script src="js/scroll-to-top.js"></script>
-    <script src="js/analytics-ui.js"></script>
-    <script src="js/user-ui.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/components.js"></script>
+    <script src="js/views/dashboard.js"></script>
+    <script src="js/views/courses.js"></script>
+    <script src="js/views/game.js"></script>
     <script src="js/app.js"></script>
+
 </body>
 </html>

@@ -1,351 +1,295 @@
 /**
- * auth.js - Con localStorage para mantener sesión
- * Una vez logueado, no vuelve a preguntar hasta logout
+ * =====================================================================
+ * AUTH.JS - Sistema de autenticación (ACTUALIZADO PARA REDISEÑO)
+ * =====================================================================
  */
 
-const Auth = {
-  currentUser: null,
-  STORAGE_KEY: 'cromify_user',
-
+const AUTH = {
+  
   /**
-   * Inicializar autenticación
+   * Inicializar sistema de autenticación
    */
-  async init() {
+  async initialize() {
+    console.log('🔐 Inicializando sistema de autenticación...');
+    
     try {
-      console.log('🔵 Inicializando Auth...');
+      // Verificar si hay sesión activa
+      const { user, error } = await window.SupabaseAPI.auth.getCurrentUser();
       
-      // 1. PRIMERO: Intentar cargar desde localStorage
-      const storedUser = this.loadFromStorage();
-      if (storedUser) {
-        console.log('✅ Usuario recuperado de localStorage:', storedUser.email);
-        this.currentUser = storedUser;
-        return true;
-      }
-      
-      // 2. Si no hay en storage, intentar desde Supabase
-      const { data: { session } } = await supabaseClient.auth.getSession();
-      
-      if (session) {
-        console.log('✅ Sesión encontrada en Supabase:', session.user.email);
-        
-        // Crear usuario básico desde la sesión
-        const user = {
-          id: session.user.id,
-          email: session.user.email,
-          name: session.user.user_metadata?.name || session.user.email.split('@')[0],
-          role: session.user.email === 'marinbalaguer@gmail.com' ? 'admin' : 'user'
-        };
-        
-        this.currentUser = user;
-        this.saveToStorage(user);
-        
-        // Cargar perfil completo desde BD
-        await this.loadUserProfile(session.user.id);
-        
-        console.log('✅ Usuario guardado en localStorage');
-        return true;
-      }
-      
-      console.log('ℹ️ No hay sesión activa');
-      return false;
-    } catch (error) {
-      console.error('❌ Error initializing auth:', error);
-      return false;
-    }
-  },
-
-  /**
-   * Cargar perfil completo del usuario desde la BD
-   */
-  async loadUserProfile(userId) {
-    try {
-      const { data, error } = await supabaseClient
-        .from('users')
-        .select('id, email, role, full_name, nickname, avatar_url')
-        .eq('id', userId)
-        .single();
-
-      if (error) throw error;
-
-      // Actualizar currentUser con datos completos
-      this.currentUser = {
-        ...this.currentUser,
-        full_name: data.full_name,
-        nickname: data.nickname,
-        avatar_url: data.avatar_url,
-        name: data.full_name || data.email.split('@')[0]
-      };
-
-      this.saveToStorage(this.currentUser);
-      return this.currentUser;
-
-    } catch (error) {
-      console.error('Error loading user profile:', error);
-      return this.currentUser;
-    }
-  },
-
-  /**
-   * Guardar usuario en localStorage
-   */
-  saveToStorage(user) {
-    try {
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(user));
-      console.log('💾 Usuario guardado en localStorage');
-    } catch (error) {
-      console.error('❌ Error guardando en localStorage:', error);
-    }
-  },
-
-  /**
-   * Cargar usuario desde localStorage
-   */
-  loadFromStorage() {
-    try {
-      const stored = localStorage.getItem(this.STORAGE_KEY);
-      if (stored) {
-        const user = JSON.parse(stored);
-        console.log('📦 Usuario cargado desde localStorage:', user.email);
-        return user;
-      }
-      return null;
-    } catch (error) {
-      console.error('❌ Error cargando desde localStorage:', error);
-      return null;
-    }
-  },
-
-  /**
-   * Limpiar localStorage
-   */
-  clearStorage() {
-    try {
-      localStorage.removeItem(this.STORAGE_KEY);
-      console.log('🗑️ localStorage limpiado');
-    } catch (error) {
-      console.error('❌ Error limpiando localStorage:', error);
-    }
-  },
-
-  /**
-   * Registrar nuevo usuario
-   */
-  async register(email, password, name) {
-    try {
-      console.log('🔵 Registrando usuario:', email);
-      
-      const { data, error } = await supabaseClient.auth.signUp({
-        email,
-        password,
-        options: {
-          data: { name }
-        }
-      });
-
-      if (error) throw error;
-
-      console.log('✅ Usuario registrado');
-      
-      // Guardar en localStorage inmediatamente
-      const user = {
-        id: data.user.id,
-        email: data.user.email,
-        name: name,
-        role: 'user'
-      };
-      
-      this.currentUser = user;
-      this.saveToStorage(user);
-      
-      return data;
-    } catch (error) {
-      console.error('❌ Error registrando:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Iniciar sesión
-   */
-  async login(email, password) {
-    try {
-      console.log('🔵 Iniciando sesión:', email);
-      
-      const { data, error } = await supabaseClient.auth.signInWithPassword({
-        email,
-        password
-      });
-
       if (error) {
-        // Mensajes de error específicos según el tipo
-        if (error.message.includes('Invalid login credentials')) {
-          const errorDetail = new Error('Usuario o contraseña incorrectos');
-          errorDetail.code = 'INVALID_CREDENTIALS';
-          throw errorDetail;
-        } else if (error.message.includes('Email not confirmed')) {
-          const errorDetail = new Error('Verifica tu email antes de iniciar sesión');
-          errorDetail.code = 'EMAIL_NOT_CONFIRMED';
-          throw errorDetail;
-        } else if (error.message.includes('User not found')) {
-          const errorDetail = new Error('Este usuario no existe');
-          errorDetail.code = 'USER_NOT_FOUND';
-          throw errorDetail;
-        } else {
-          throw error;
-        }
+        console.error('Error al verificar sesión:', error);
+        this.showLogin();
+        return;
       }
-
-      console.log('✅ Sesión iniciada');
       
-      // Guardar en localStorage
-      const user = {
-        id: data.user.id,
-        email: data.user.email,
-        name: data.user.user_metadata?.name || email.split('@')[0],
-        role: email === 'marinbalaguer@gmail.com' ? 'admin' : 'user'
-      };
-      
-      this.currentUser = user;
-      this.saveToStorage(user);
-      
-      // Cargar perfil completo desde BD
-      await this.loadUserProfile(data.user.id);
-      
-      return data;
-    } catch (error) {
-      console.error('❌ Error en login:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Login con Google
-   */
-  async loginWithGoogle() {
-    try {
-      console.log('🔵 Iniciando login con Google...');
-      
-      const { data, error } = await supabaseClient.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: window.location.origin
-        }
-      });
-
-      if (error) throw error;
-      
-      console.log('✅ Redirigiendo a Google...');
-      return data;
-    } catch (error) {
-      console.error('❌ Error en Google login:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Cerrar sesión
-   */
-  async logout() {
-    try {
-      console.log('🔵 Cerrando sesión...');
-      
-      // 1. Limpiar localStorage PRIMERO (esto siempre funciona)
-      this.clearStorage();
-      
-      // 2. Limpiar currentUser
-      this.currentUser = null;
-      
-      // 3. Intentar cerrar sesión en Supabase (puede fallar si no hay sesión)
-      try {
-        const { error } = await supabaseClient.auth.signOut({ scope: 'local' });
-        if (error && error.message !== 'Auth session missing!') {
-          console.warn('⚠️ Error cerrando sesión en Supabase:', error.message);
-        } else {
-          console.log('✅ Sesión Supabase cerrada');
-        }
-      } catch (supabaseError) {
-        console.warn('⚠️ No se pudo cerrar sesión en Supabase (probablemente ya estaba cerrada)');
+      if (user) {
+        console.log('✅ Usuario autenticado:', user.email);
+        await this.showApp(user);
+      } else {
+        console.log('⚠️ No hay sesión activa');
+        this.showLogin();
       }
-
-      console.log('✅ Sesión cerrada completamente');
-      return true;
+      
+      // Escuchar cambios de autenticación
+      this.listenAuthChanges();
+      
     } catch (error) {
-      console.error('❌ Error en logout:', error);
-      // Aunque falle, aseguramos que local está limpio
-      this.clearStorage();
-      this.currentUser = null;
-      return true;
+      console.error('❌ Error al inicializar autenticación:', error);
+      this.showLogin();
     }
   },
-
+  
   /**
-   * Verificar si el usuario es admin
+   * Mostrar pantalla de login
    */
-  isAdmin() {
-    return this.currentUser && this.currentUser.role === 'admin';
+  showLogin() {
+    const authScreen = document.getElementById('auth-screen');
+    const appScreen = document.getElementById('app-screen');
+    const loginView = document.getElementById('login-view');
+    const registerView = document.getElementById('register-view');
+    
+    if (authScreen) authScreen.classList.remove('hidden');
+    if (appScreen) appScreen.classList.add('hidden');
+    if (loginView) loginView.classList.remove('hidden');
+    if (registerView) registerView.classList.add('hidden');
+    
+    // Limpiar errores
+    this.hideError('login-error');
   },
-
+  
   /**
-   * Obtener usuario actual
+   * Mostrar pantalla de registro
    */
-  getCurrentUser() {
-    return this.currentUser;
+  showRegister(event) {
+    if (event) event.preventDefault();
+    
+    const loginView = document.getElementById('login-view');
+    const registerView = document.getElementById('register-view');
+    
+    if (loginView) loginView.classList.add('hidden');
+    if (registerView) registerView.classList.remove('hidden');
+    
+    // Limpiar errores
+    this.hideError('register-error');
+    this.hideError('register-success');
   },
-
+  
   /**
-   * Escuchar cambios de autenticación
+   * Mostrar aplicación principal
    */
-  onAuthStateChange(callback) {
-    return supabaseClient.auth.onAuthStateChange(async (event, session) => {
-      console.log('🔵 Auth event:', event, session?.user?.email || 'no session');
+  async showApp(user) {
+    const authScreen = document.getElementById('auth-screen');
+    const appScreen = document.getElementById('app-screen');
+    
+    if (authScreen) authScreen.classList.add('hidden');
+    if (appScreen) appScreen.classList.remove('hidden');
+    
+    // Inicializar aplicación
+    if (typeof GolfApp !== 'undefined') {
+      await GolfApp.initialize();
+    }
+  },
+  
+  /**
+   * Manejar login
+   */
+  async handleLogin(event) {
+    event.preventDefault();
+    
+    const email = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
+    
+    // Validación básica
+    if (!email || !password) {
+      this.showError('login-error', 'Por favor completa todos los campos');
+      return;
+    }
+    
+    // Deshabilitar botón
+    const btn = document.getElementById('login-btn');
+    const originalText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Iniciando sesión...';
+    
+    try {
+      const { user, error } = await window.SupabaseAPI.auth.signIn(email, password);
+      
+      if (error) {
+        throw new Error(error);
+      }
+      
+      if (!user) {
+        throw new Error('Error al iniciar sesión');
+      }
+      
+      console.log('✅ Login exitoso');
+      
+      // Mostrar aplicación
+      await this.showApp(user);
+      
+    } catch (error) {
+      console.error('Error en login:', error);
+      
+      // Mensajes de error más amigables
+      let errorMessage = 'Error al iniciar sesión';
+      
+      if (error.message.includes('Invalid login credentials')) {
+        errorMessage = 'Email o contraseña incorrectos';
+      } else if (error.message.includes('Email not confirmed')) {
+        errorMessage = 'Por favor verifica tu email antes de iniciar sesión';
+      } else if (error.message.includes('network')) {
+        errorMessage = 'Error de conexión. Verifica tu internet';
+      }
+      
+      this.showError('login-error', errorMessage);
+      
+      // Restaurar botón
+      btn.disabled = false;
+      btn.textContent = originalText;
+    }
+  },
+  
+  /**
+   * Manejar registro
+   */
+  async handleRegister(event) {
+    event.preventDefault();
+    
+    const email = document.getElementById('register-email').value.trim();
+    const password = document.getElementById('register-password').value;
+    const passwordConfirm = document.getElementById('register-password-confirm').value;
+    
+    // Limpiar mensajes anteriores
+    this.hideError('register-error');
+    this.hideError('register-success');
+    
+    // Validaciones
+    if (!email || !password || !passwordConfirm) {
+      this.showError('register-error', 'Por favor completa todos los campos');
+      return;
+    }
+    
+    if (!this.isValidEmail(email)) {
+      this.showError('register-error', 'Email inválido');
+      return;
+    }
+    
+    if (password.length < 6) {
+      this.showError('register-error', 'La contraseña debe tener al menos 6 caracteres');
+      return;
+    }
+    
+    if (password !== passwordConfirm) {
+      this.showError('register-error', 'Las contraseñas no coinciden');
+      return;
+    }
+    
+    // Deshabilitar botón
+    const btn = document.getElementById('register-btn');
+    const originalText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Creando cuenta...';
+    
+    try {
+      const { user, error } = await window.SupabaseAPI.auth.signUp(email, password);
+      
+      if (error) {
+        throw new Error(error);
+      }
+      
+      console.log('✅ Registro exitoso');
+      
+      // Mostrar mensaje de éxito
+      this.showSuccess(
+        'register-success', 
+        '✅ Cuenta creada correctamente. Por favor verifica tu email para activar tu cuenta.'
+      );
+      
+      // Limpiar formulario
+      document.getElementById('register-form').reset();
+      
+      // Redirigir al login después de 3 segundos
+      setTimeout(() => {
+        this.showLogin();
+      }, 3000);
+      
+    } catch (error) {
+      console.error('Error en registro:', error);
+      
+      let errorMessage = 'Error al crear la cuenta';
+      
+      if (error.message.includes('already registered')) {
+        errorMessage = 'Este email ya está registrado';
+      } else if (error.message.includes('network')) {
+        errorMessage = 'Error de conexión. Verifica tu internet';
+      }
+      
+      this.showError('register-error', errorMessage);
+      
+      // Restaurar botón
+      btn.disabled = false;
+      btn.textContent = originalText;
+    }
+  },
+  
+  /**
+   * Escuchar cambios en el estado de autenticación
+   */
+  listenAuthChanges() {
+    window.SupabaseAPI.auth.onAuthStateChange(async (event, session) => {
+      console.log('🔄 Auth state changed:', event);
       
       if (event === 'SIGNED_IN' && session) {
-        console.log('⚡ SIGNED_IN detectado');
-        
-        // Si ya tenemos usuario en memoria, no hacer nada
-        if (this.currentUser) {
-          console.log('⚡ Usuario ya en memoria, saltando');
-          callback(event, session, this.currentUser);
-          return;
-        }
-        
-        // Si no está en memoria, cargar de localStorage
-        const storedUser = this.loadFromStorage();
-        if (storedUser) {
-          console.log('⚡ Usuario cargado de localStorage');
-          this.currentUser = storedUser;
-          callback(event, session, this.currentUser);
-          return;
-        }
-        
-        // Si no está en localStorage, crear desde sesión
-        console.log('⚡ Creando usuario desde sesión');
-        const user = {
-          id: session.user.id,
-          email: session.user.email,
-          name: session.user.user_metadata?.name || session.user.email.split('@')[0],
-          role: session.user.email === 'marinbalaguer@gmail.com' ? 'admin' : 'user'
-        };
-        
-        this.currentUser = user;
-        this.saveToStorage(user);
-        
-        callback(event, session, this.currentUser);
-        
+        await this.showApp(session.user);
       } else if (event === 'SIGNED_OUT') {
-        console.log('👋 SIGNED_OUT detectado');
-        this.clearStorage();
-        this.currentUser = null;
-        callback(event, null, null);
-        
-      } else if (event === 'INITIAL_SESSION' && session) {
-        console.log('⚡ INITIAL_SESSION detectado');
-        // No hacer nada, Auth.init() ya lo manejó
-        callback(event, session, this.currentUser);
-        
-      } else {
-        callback(event, session, this.currentUser);
+        this.showLogin();
       }
     });
+  },
+  
+  /**
+   * Mostrar error
+   */
+  showError(elementId, message) {
+    const errorEl = document.getElementById(elementId);
+    if (errorEl) {
+      errorEl.textContent = message;
+      errorEl.classList.remove('hidden');
+    }
+  },
+  
+  /**
+   * Ocultar error
+   */
+  hideError(elementId) {
+    const errorEl = document.getElementById(elementId);
+    if (errorEl) {
+      errorEl.classList.add('hidden');
+      errorEl.textContent = '';
+    }
+  },
+  
+  /**
+   * Mostrar mensaje de éxito
+   */
+  showSuccess(elementId, message) {
+    const successEl = document.getElementById(elementId);
+    if (successEl) {
+      successEl.textContent = message;
+      successEl.classList.remove('hidden');
+    }
+  },
+  
+  /**
+   * Validar email
+   */
+  isValidEmail(email) {
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return regex.test(email);
   }
 };
+
+// Exportar al ámbito global
+window.AUTH = AUTH;
+
+console.log('✅ Auth.js (rediseño) cargado');
