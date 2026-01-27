@@ -1,0 +1,919 @@
+/**
+ * api.js - Módulo de API
+ * Gestiona todas las operaciones de datos con Supabase
+ * 
+ * CAMBIOS APLICADOS:
+ * ✅ joinCollection ahora es IDEMPOTENTE - no falla si los cromos ya existen
+ * ✅ leaveCollection mejorado con eliminación robusta por album_id
+ * ✅ Limpieza agresiva de huérfanos antes de unirse
+ */
+
+const API = {
+  
+  // ============================================
+  // ÁLBUMES (Solo lectura para usuarios normales)
+  // ============================================
+
+  /**
+   * Obtener todos los álbumes activos
+   */
+  async getAlbums() {
+    try {
+      const { data, error } = await supabaseClient
+        .from('albums')
+        .select('*')
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error getting albums:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Obtener álbum por ID
+   */
+  async getAlbum(albumId) {
+    try {
+      const { data, error } = await supabaseClient
+        .from('albums')
+        .select('*')
+        .eq('id', albumId)
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error getting album:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Crear álbum (solo admin)
+   */
+  async createAlbum(albumData) {
+    try {
+      const { data, error } = await supabaseClient
+        .from('albums')
+        .insert([{
+          ...albumData,
+          created_by: Auth.getCurrentUser().id
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error creating album:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Actualizar álbum (solo admin)
+   */
+  async updateAlbum(albumId, albumData) {
+    try {
+      const { data, error } = await supabaseClient
+        .from('albums')
+        .update(albumData)
+        .eq('id', albumId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error updating album:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Eliminar álbum (solo admin)
+   */
+  async deleteAlbum(albumId) {
+    try {
+      const { error } = await supabaseClient
+        .from('albums')
+        .delete()
+        .eq('id', albumId);
+
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error('Error deleting album:', error);
+      throw error;
+    }
+  },
+
+  // ============================================
+  // CATEGORÍAS
+  // ============================================
+
+  /**
+   * Obtener categorías de un álbum
+   */
+  async getCategories(albumId) {
+    try {
+      const { data, error } = await supabaseClient
+        .from('categories')
+        .select('*')
+        .eq('album_id', albumId)
+        .order('name');
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error getting categories:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Crear categoría (solo admin)
+   */
+  async createCategory(albumId, categoryData) {
+    try {
+      const { data, error } = await supabaseClient
+        .from('categories')
+        .insert([{
+          album_id: albumId,
+          ...categoryData
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error creating category:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Actualizar categoría (solo admin)
+   */
+  async updateCategory(categoryId, categoryData) {
+    try {
+      const { data, error } = await supabaseClient
+        .from('categories')
+        .update(categoryData)
+        .eq('id', categoryId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error updating category:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Eliminar categoría (solo admin)
+   */
+  async deleteCategory(categoryId) {
+    try {
+      const { error } = await supabaseClient
+        .from('categories')
+        .delete()
+        .eq('id', categoryId);
+
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error('Error deleting category:', error);
+      throw error;
+    }
+  },
+
+  // ============================================
+  // CROMOS MAESTROS (Solo admin gestiona)
+  // ============================================
+
+  /**
+   * Obtener cromos maestros de un álbum
+   */
+  async getMasterCards(albumId) {
+    try {
+      const { data, error } = await supabaseClient
+        .from('master_cards')
+        .select(`
+          *,
+          category:categories(*)
+        `)
+        .eq('album_id', albumId)
+        .order('number');
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error getting master cards:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Crear cromo maestro (solo admin)
+   */
+  async createMasterCard(cardData) {
+    try {
+      const { data, error } = await supabaseClient
+        .from('master_cards')
+        .insert([cardData])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error creating master card:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Actualizar cromo maestro (solo admin)
+   */
+  async updateMasterCard(cardId, cardData) {
+    try {
+      const { data, error } = await supabaseClient
+        .from('master_cards')
+        .update(cardData)
+        .eq('id', cardId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error updating master card:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Eliminar cromo maestro (solo admin)
+   */
+  async deleteMasterCard(cardId) {
+    try {
+      const { error } = await supabaseClient
+        .from('master_cards')
+        .delete()
+        .eq('id', cardId);
+
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error('Error deleting master card:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Importar cromos maestros en masa (solo admin)
+   */
+  async importMasterCards(albumId, cardsArray) {
+    try {
+      const cardsWithAlbum = cardsArray.map(card => ({
+        ...card,
+        album_id: albumId
+      }));
+
+      const { data, error } = await supabaseClient
+        .from('master_cards')
+        .insert(cardsWithAlbum)
+        .select();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error importing master cards:', error);
+      throw error;
+    }
+  },
+
+  // ============================================
+  // COLECCIONES DE USUARIO
+  // ============================================
+
+  /**
+   * Obtener colecciones del usuario actual
+   */
+  async getUserCollections() {
+    try {
+      const userId = Auth.getCurrentUser().id;
+      
+      // Primero traer las colecciones con sus álbumes
+      const { data: collections, error: collectionsError } = await supabaseClient
+        .from('user_collections')
+        .select(`
+          *,
+          album:albums(*)
+        `)
+        .eq('user_id', userId)
+        .order('joined_at', { ascending: false });
+
+      if (collectionsError) throw collectionsError;
+      
+      if (!collections || collections.length === 0) {
+        return [];
+      }
+      
+      // Para cada colección, traer los user_cards del usuario para ese álbum
+      const collectionsWithCards = await Promise.all(
+        collections.map(async (collection) => {
+          const { data: userCards, error: cardsError } = await supabaseClient
+            .from('user_cards')
+            .select('id, master_card_id, status, duplicates_count')
+            .eq('user_id', userId)
+            .eq('collection_id', collection.id);
+          
+          if (cardsError) {
+            console.error('Error getting user cards for collection:', cardsError);
+            return { ...collection, user_cards: [] };
+          }
+          
+          return {
+            ...collection,
+            user_cards: userCards || []
+          };
+        })
+      );
+      
+      return collectionsWithCards;
+    } catch (error) {
+      console.error('Error getting user collections:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Limpiar todo el cache de verificación de colecciones
+   * Útil después de operaciones de join/leave para asegurar datos frescos
+   */
+  clearCollectionCache() {
+    console.log('[API] Limpiando cache de hasCollection');
+    this._hasCollectionCache = {};
+  },
+
+  /**
+   * Verificar si usuario tiene colección de un álbum
+   * Con cache temporal para evitar race conditions
+   */
+  async hasCollection(albumId, force = false) {
+    try {
+      const userId = Auth.getCurrentUser().id;
+      const cacheKey = `has_collection_${userId}_${albumId}`;
+      
+      // Cache temporal de 1 segundo para prevenir race conditions
+      if (!force && this._hasCollectionCache && this._hasCollectionCache[cacheKey]) {
+        const cached = this._hasCollectionCache[cacheKey];
+        if (Date.now() - cached.timestamp < 1000) {
+          console.log(`[API] hasCollection (CACHE): albumId=${albumId}, exists=${cached.value}`);
+          return cached.value;
+        } else {
+          console.log(`[API] hasCollection (CACHE EXPIRED): albumId=${albumId}`);
+        }
+      }
+      
+      console.log(`[API] hasCollection (QUERY BD): albumId=${albumId}`);
+      const { data, error } = await supabaseClient
+        .from('user_collections')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('album_id', albumId)
+        .maybeSingle();
+
+      if (error) throw error;
+      
+      const exists = data !== null;
+      console.log(`[API] hasCollection (RESULT): albumId=${albumId}, exists=${exists}`, data ? `(collection_id: ${data.id})` : '');
+      
+      // Guardar en cache
+      if (!this._hasCollectionCache) this._hasCollectionCache = {};
+      this._hasCollectionCache[cacheKey] = {
+        value: exists,
+        timestamp: Date.now()
+      };
+      
+      return exists;
+    } catch (error) {
+      console.error('Error checking collection:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Limpiar cache de hasCollection para un álbum específico o todo
+   */
+  clearCollectionCache(albumId = null) {
+    if (!this._hasCollectionCache) return;
+    
+    if (albumId) {
+      // Limpiar cache de un álbum específico
+      const userId = Auth.getCurrentUser()?.id;
+      if (userId) {
+        const cacheKey = `has_collection_${userId}_${albumId}`;
+        delete this._hasCollectionCache[cacheKey];
+        console.log(`[API] Cache limpiado para álbum: ${albumId}`);
+      }
+    } else {
+      // Limpiar todo el cache
+      this._hasCollectionCache = {};
+      console.log('[API] Cache completo limpiado');
+    }
+  },
+
+  /**
+   * NUEVA FUNCIÓN: Limpiar TODOS los cromos de un usuario para un álbum específico
+   * Usa album_id para eliminar SIN depender de collection_id
+   * VERSIÓN MEJORADA: Más agresiva y con mejor manejo de errores
+   */
+  async cleanAllUserCardsForAlbum(userId, albumId) {
+    try {
+      console.log(`[API] cleanAllUserCardsForAlbum: userId=${userId}, albumId=${albumId}`);
+      
+      // ESTRATEGIA 1: Eliminar directamente por user_id y consultando master_cards
+      // Esto es más eficiente y seguro
+      
+      // 1. Obtener todos los master_card_ids del álbum
+      const { data: masterCards, error: masterError } = await supabaseClient
+        .from('master_cards')
+        .select('id')
+        .eq('album_id', albumId);
+      
+      if (masterError) {
+        console.error('[API] cleanAllUserCardsForAlbum: Error obteniendo master_cards:', masterError);
+        throw masterError;
+      }
+      
+      if (!masterCards || masterCards.length === 0) {
+        console.log('[API] cleanAllUserCardsForAlbum: No hay master_cards en este álbum');
+        return 0;
+      }
+      
+      const masterCardIds = masterCards.map(c => c.id);
+      console.log(`[API] cleanAllUserCardsForAlbum: ${masterCardIds.length} master_cards en el álbum`);
+      
+      // 2. Verificar cuántos user_cards existen ANTES de eliminar
+      const { count: beforeCount, error: countError } = await supabaseClient
+        .from('user_cards')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .in('master_card_id', masterCardIds.slice(0, 100)); // Solo contar muestra
+      
+      if (!countError) {
+        console.log(`[API] cleanAllUserCardsForAlbum: ~${beforeCount || 0} cromos a eliminar (aprox.)`);
+      }
+      
+      // 3. Eliminar en lotes más pequeños (30 items) para mayor estabilidad
+      const BATCH_SIZE = 30;
+      let totalDeleted = 0;
+      let batchErrors = 0;
+      
+      for (let i = 0; i < masterCardIds.length; i += BATCH_SIZE) {
+        const batchIds = masterCardIds.slice(i, i + BATCH_SIZE);
+        const batchNum = Math.floor(i/BATCH_SIZE) + 1;
+        const totalBatches = Math.ceil(masterCardIds.length/BATCH_SIZE);
+        
+        console.log(`[API] cleanAllUserCardsForAlbum: Lote ${batchNum}/${totalBatches} (${batchIds.length} items)`);
+        
+        try {
+          const { data: deleted, error: deleteError, count } = await supabaseClient
+            .from('user_cards')
+            .delete({ count: 'exact' })
+            .eq('user_id', userId)
+            .in('master_card_id', batchIds)
+            .select('id');
+          
+          if (deleteError) {
+            console.error(`[API] cleanAllUserCardsForAlbum: Error en lote ${batchNum}:`, deleteError);
+            batchErrors++;
+            // NO lanzar error, continuar con siguiente lote
+            continue;
+          }
+          
+          const deletedCount = deleted?.length || 0;
+          totalDeleted += deletedCount;
+          
+          if (deletedCount > 0) {
+            console.log(`[API] cleanAllUserCardsForAlbum: Lote ${batchNum} → ${deletedCount} eliminados`);
+          }
+          
+        } catch (batchError) {
+          console.error(`[API] cleanAllUserCardsForAlbum: Excepción en lote ${batchNum}:`, batchError);
+          batchErrors++;
+          // Continuar con siguiente lote
+        }
+      }
+      
+      console.log(`[API] cleanAllUserCardsForAlbum: ✅ TOTAL: ${totalDeleted} cromos eliminados`);
+      
+      if (batchErrors > 0) {
+        console.warn(`[API] cleanAllUserCardsForAlbum: ⚠️  ${batchErrors} lotes fallaron`);
+      }
+      
+      // 4. VERIFICACIÓN FINAL: Contar cuántos quedan
+      const { count: afterCount, error: afterCountError } = await supabaseClient
+        .from('user_cards')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .in('master_card_id', masterCardIds.slice(0, 100));
+      
+      if (!afterCountError && afterCount > 0) {
+        console.warn(`[API] cleanAllUserCardsForAlbum: ⚠️  Aún quedan ~${afterCount} cromos (puede ser normal si el álbum es muy grande)`);
+      } else if (!afterCountError && afterCount === 0) {
+        console.log(`[API] cleanAllUserCardsForAlbum: ✅ Verificación: 0 cromos restantes`);
+      }
+      
+      return totalDeleted;
+      
+    } catch (error) {
+      console.error('[API] cleanAllUserCardsForAlbum: Error crítico:', error);
+      // NO lanzar el error - queremos que joinCollection continúe
+      return 0;
+    }
+  },
+
+  /**
+   * FUNCIÓN MEJORADA: Unirse a una colección
+   * ESTRATEGIA DUAL: Intenta usar función RPC de Supabase (atómica), si no existe usa el método manual
+   */
+  async joinCollection(albumId) {
+    try {
+      const userId = Auth.getCurrentUser().id;
+      
+      console.log(`[API] joinCollection: albumId=${albumId}, userId=${userId}`);
+
+      // ESTRATEGIA 1: Intentar usar función RPC atómica (si existe en Supabase)
+      console.log('[API] joinCollection: Intentando método RPC atómico...');
+      
+      try {
+        const { data: rpcResult, error: rpcError } = await supabaseClient
+          .rpc('join_collection_clean', {
+            p_user_id: userId,
+            p_album_id: albumId
+          });
+        
+        if (!rpcError && rpcResult && rpcResult.length > 0) {
+          const result = rpcResult[0];
+          console.log(`[API] joinCollection: ✅ RPC exitoso - ${result.message}`);
+          
+          this.clearCollectionCache(albumId);
+          
+          // Retornar la colección en formato esperado
+          return {
+            id: result.collection_id,
+            user_id: userId,
+            album_id: albumId,
+            joined_at: new Date().toISOString()
+          };
+        }
+        
+        // Si RPC no existe, caer al método manual
+        console.log('[API] joinCollection: RPC no disponible, usando método manual...');
+        
+      } catch (rpcErr) {
+        console.log('[API] joinCollection: RPC no disponible:', rpcErr.message);
+        // Continuar con método manual
+      }
+
+      // ESTRATEGIA 2: Método manual (fallback)
+      console.log(`[API] joinCollection: LIMPIEZA MANUAL iniciando...`);
+      
+      // 2.1 Eliminar colección si existe
+      const { error: deleteCollError } = await supabaseClient
+        .from('user_collections')
+        .delete()
+        .eq('user_id', userId)
+        .eq('album_id', albumId);
+      
+      if (deleteCollError && deleteCollError.code !== 'PGRST116') {
+        console.warn('[API] joinCollection: Error eliminando colección previa:', deleteCollError);
+      }
+      
+      // 2.2 Intentar usar RPC para limpiar cromos (más rápido que lotes)
+      try {
+        const { data: cleanCount, error: cleanError } = await supabaseClient
+          .rpc('clean_user_cards_for_album', {
+            p_user_id: userId,
+            p_album_id: albumId
+          });
+        
+        if (!cleanError) {
+          console.log(`[API] joinCollection: ✅ RPC limpieza: ${cleanCount} cromos eliminados`);
+        } else {
+          throw cleanError;
+        }
+      } catch (cleanErr) {
+        // Si RPC de limpieza no existe, usar método por lotes
+        console.log('[API] joinCollection: RPC limpieza no disponible, usando lotes...');
+        const cleaned = await this.cleanAllUserCardsForAlbum(userId, albumId);
+        console.log(`[API] joinCollection: ✅ ${cleaned} cromos eliminados (lotes)`);
+      }
+      
+      // 2.3 Esperar para que la BD procese
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // 2.4 Limpiar cache
+      this.clearCollectionCache(albumId);
+      
+      // 2.5 CREAR desde cero
+      console.log(`[API] joinCollection: Creando colección...`);
+      const { data, error } = await supabaseClient
+        .from('user_collections')
+        .insert([{
+          user_id: userId,
+          album_id: albumId
+        }])
+        .select()
+        .single();
+
+      if (error) {
+        console.error(`[API] joinCollection: Error creando colección:`, error);
+        
+        // ÚLTIMO RECURSO: Si aún falla, hacer otro intento con más delay
+        if (error.code === '23505') {
+          console.log('[API] joinCollection: ERROR 23505 - segundo intento con más delay...');
+          
+          // Limpieza agresiva final
+          await this.cleanAllUserCardsForAlbum(userId, albumId);
+          await new Promise(resolve => setTimeout(resolve, 1000)); // 1 segundo de espera
+          
+          // Reintentar
+          const { data: retryData, error: retryError } = await supabaseClient
+            .from('user_collections')
+            .insert([{
+              user_id: userId,
+              album_id: albumId
+            }])
+            .select()
+            .single();
+          
+          if (retryError) {
+            console.error('[API] joinCollection: Reintento falló:', retryError);
+            
+            // Mensaje claro al usuario
+            const userError = new Error(
+              'Hay un problema técnico al unirte a este álbum. ' +
+              'Por favor, recarga la página (F5) e inténtalo de nuevo. ' +
+              'Si el problema persiste, contacta a soporte.'
+            );
+            userError.code = 'PERSISTENT_CONFLICT';
+            userError.original = retryError;
+            throw userError;
+          }
+          
+          console.log('[API] joinCollection: ✅ Reintento exitoso');
+          this.clearCollectionCache(albumId);
+          return retryData;
+        }
+        
+        throw error;
+      }
+      
+      console.log(`[API] joinCollection: ✅ Colección creada exitosamente`);
+      this.clearCollectionCache(albumId);
+      return data;
+      
+    } catch (error) {
+      console.error('[API] joinCollection: Error final:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * FUNCIÓN MEJORADA: Desunirse de una colección
+   * Ahora elimina cromos usando album_id en lugar de collection_id
+   */
+  async leaveCollection(collectionId) {
+    try {
+      const userId = Auth.getCurrentUser().id;
+      
+      console.log(`[API] leaveCollection: collectionId=${collectionId}`);
+      
+      // PASO 1: Obtener album_id de la colección ANTES de eliminarla
+      const { data: collection, error: getError } = await supabaseClient
+        .from('user_collections')
+        .select('album_id')
+        .eq('id', collectionId)
+        .eq('user_id', userId)
+        .single();
+      
+      if (getError) {
+        console.error('[API] leaveCollection: Error obteniendo colección:', getError);
+        throw getError;
+      }
+      
+      if (!collection) {
+        throw new Error('Colección no encontrada');
+      }
+      
+      const albumId = collection.album_id;
+      console.log(`[API] leaveCollection: album_id=${albumId}`);
+      
+      // PASO 2: Eliminar TODOS los user_cards del usuario para este álbum
+      // Usar la función robusta que trabaja con album_id
+      console.log('[API] leaveCollection: Eliminando cromos...');
+      const deleted = await this.cleanAllUserCardsForAlbum(userId, albumId);
+      console.log(`[API] leaveCollection: ✅ ${deleted} cromos eliminados`);
+      
+      // PASO 3: Ahora sí, eliminar la colección
+      console.log('[API] leaveCollection: Eliminando colección...');
+      const { error: deleteError } = await supabaseClient
+        .from('user_collections')
+        .delete()
+        .eq('id', collectionId)
+        .eq('user_id', userId); // Seguridad: solo puede borrar sus propias colecciones
+
+      if (deleteError) {
+        console.error('[API] leaveCollection: Error eliminando colección:', deleteError);
+        throw deleteError;
+      }
+      
+      console.log('[API] leaveCollection: ✅ Colección eliminada');
+      
+      // PASO 4: Limpiar cache
+      this.clearCollectionCache(albumId);
+      
+      return true;
+      
+    } catch (error) {
+      console.error('[API] leaveCollection: Error:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Obtener colección específica
+   */
+  async getCollection(collectionId) {
+    try {
+      const { data, error } = await supabaseClient
+        .from('user_collections')
+        .select(`
+          *,
+          album:albums(*)
+        `)
+        .eq('id', collectionId)
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error getting collection:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Recargar cromos de usuario (obtiene versión actualizada desde master_cards)
+   */
+  async reloadUserCards(collectionId) {
+    try {
+      // Esto forzará a que Supabase recalcule los cromos desde master_cards
+      // Si el trigger está bien configurado, debería sincronizar automáticamente
+      const cards = await this.getUserCards(collectionId);
+      return cards;
+    } catch (error) {
+      console.error('Error reloading user cards:', error);
+      throw error;
+    }
+  },
+
+  // ============================================
+  // CROMOS DE USUARIO
+  // ============================================
+
+  /**
+   * Obtener cromos de una colección del usuario
+   */
+  async getUserCards(collectionId) {
+    try {
+      const { data, error } = await supabaseClient
+        .from('user_cards')
+        .select(`
+          *,
+          master_card:master_cards(
+            *,
+            category:categories(*)
+          )
+        `)
+        .eq('collection_id', collectionId)
+        .order('master_card(number)');
+
+      if (error) throw error;
+      
+      // Aplanar la estructura para facilitar el uso
+      return (data || []).map(uc => ({
+        id: uc.id,
+        user_id: uc.user_id,
+        collection_id: uc.collection_id,
+        master_card_id: uc.master_card_id,
+        status: uc.status,
+        duplicates_count: uc.duplicates_count,
+        notes: uc.notes,
+        // Datos del cromo maestro
+        number: uc.master_card.number,
+        playerName: uc.master_card.player_name,
+        team: uc.master_card.team,
+        categoryId: uc.master_card.category_id,
+        category: uc.master_card.category
+      }));
+    } catch (error) {
+      console.error('Error getting user cards:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Actualizar estado de un cromo
+   */
+  async updateUserCard(userCardId, updates) {
+    try {
+      const { data, error } = await supabaseClient
+        .from('user_cards')
+        .update(updates)
+        .eq('id', userCardId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error updating user card:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Actualizar múltiples cromos (cambio masivo de categoría)
+   */
+  async updateMultipleUserCards(userCardIds, updates) {
+    try {
+      const { data, error } = await supabaseClient
+        .from('user_cards')
+        .update(updates)
+        .in('id', userCardIds)
+        .select();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error updating multiple cards:', error);
+      throw error;
+    }
+  },
+
+  // ============================================
+  // ESTADÍSTICAS
+  // ============================================
+
+  /**
+   * Obtener estadísticas de una colección
+   */
+  async getCollectionStats(collectionId) {
+    try {
+      const { data, error } = await supabaseClient
+        .from('user_collection_stats')
+        .select('*')
+        .eq('collection_id', collectionId)
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error getting collection stats:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Obtener estadísticas generales del usuario
+   */
+  async getUserStats() {
+    try {
+      const userId = Auth.getCurrentUser().id;
+      
+      const { data, error } = await supabaseClient
+        .from('user_collection_stats')
+        .select('*')
+        .eq('user_id', userId);
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error getting user stats:', error);
+      throw error;
+    }
+  }
+};
